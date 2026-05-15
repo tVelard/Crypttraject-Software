@@ -1,0 +1,75 @@
+name: Build & release binaries
+
+# Triggered manually from the Actions tab, or automatically when a tag
+# matching v* is pushed. On a tag the zips are attached to the GitHub
+# Release; on a manual run they are just uploaded as workflow artifacts.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            os_tag: linux
+          - os: windows-latest
+            os_tag: windows
+          - os: macos-latest
+            os_tag: macos
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Pyfhel ships prebuilt wheels for most platforms but on Linux it
+      # still needs a recent libstdc++. ubuntu-latest is fine; this step
+      # is a safety net in case we ever pin to an older image.
+      - name: Install system libs (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxkbcommon0 libegl1
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+          pip install pyinstaller>=6.3
+
+      - name: Build binaries
+        run: python packaging/build_binaries.py
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CryptTraject-${{ matrix.os_tag }}
+          path: dist/CryptTraject-*.zip
+          if-no-files-found: error
+
+  release:
+    name: Attach to GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/CryptTraject-*.zip
+          generate_release_notes: true

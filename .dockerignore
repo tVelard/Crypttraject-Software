@@ -1,0 +1,29 @@
+# Build artifacts that have no place in any image
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# PyInstaller outputs
+build/
+dist/
+
+# Web build outputs (built inside the Docker stage)
+web/node_modules/
+web/dist/
+web/.vite/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# VCS
+.git/
+.gitignore
+
+# Local docs / scratch
+*.md
+!README.md
