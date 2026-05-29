@@ -1,0 +1,32 @@
+# Caddy reverse proxy for the CryptTraject VPS deployment.
+#
+# Caddy obtains and renews Let's Encrypt certificates automatically when
+# SITE_ADDRESS is a real domain. Set it via the .env file (see .env.example):
+#
+#   SITE_ADDRESS=crypttraject.example.com   ACME_EMAIL=you@example.com
+#       -> serves the landing page over HTTPS at that domain and proxies
+#          /api/* to the FastAPI server (also reachable at api.<domain>).
+#
+#   SITE_ADDRESS=:80                          (no domain yet)
+#       -> serves everything over plain HTTP on the VPS IP. No TLS.
+#
+# Layout behind the proxy:
+#   /            -> web   (nginx serving the Vite build)
+#   /api/*       -> server (FastAPI), with the /api prefix stripped
+
+{
+	# Empty when SITE_ADDRESS is :80; harmless otherwise.
+	email {$ACME_EMAIL}
+}
+
+{$SITE_ADDRESS} {
+	encode gzip
+
+	handle_path /api/* {
+		reverse_proxy server:8000
+	}
+
+	handle {
+		reverse_proxy web:80
+	}
+}

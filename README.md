@@ -92,6 +92,57 @@ Dockerfiles live in [docker/](docker/) and the build is wired so source
 edits only invalidate the lightweight layers — Pyfhel + dependencies
 are cached as long as `requirements.txt` is unchanged.
 
+## Deploying on a VPS (production)
+
+A separate composition wires the server and web behind a **Caddy** reverse
+proxy that terminates TLS (automatic Let's Encrypt) and is the only service
+publishing ports:
+
+```
+https://<domain>/         -> landing page (nginx)
+https://<domain>/api/...  -> FastAPI server
+```
+
+The production server image is slimmer than the dev one: it installs
+[requirements-server.txt](requirements-server.txt) (no PySide6/Qt) and only
+the `shared` + `server` packages, via
+[docker/server.prod.Dockerfile](docker/server.prod.Dockerfile).
+
+Quick install on a fresh Debian/Ubuntu VPS:
+
+```
+git clone <repo> && cd CryptTraject-Software
+./deploy.sh           # installs Docker if needed, creates .env, then starts
+# edit .env  (set SITE_ADDRESS=your.domain and ACME_EMAIL=you@example.com)
+./deploy.sh           # second run builds + starts the stack
+```
+
+Or manually:
+
+```
+cp .env.example .env  # edit SITE_ADDRESS / ACME_EMAIL
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+| `.env` key                  | Meaning                                                        |
+| --------------------------- | -------------------------------------------------------------- |
+| `SITE_ADDRESS`              | Domain for HTTPS (e.g. `crypttraject.example.com`), or `:80` to serve plain HTTP on the IP while you have no domain |
+| `ACME_EMAIL`                | Let's Encrypt contact email (only needed with a real domain)   |
+| `CRYPTTRAJECT_CORS_ORIGINS` | Browser origins allowed to call the API; empty by default      |
+
+DNS: point an `A`/`AAAA` record for your domain at the VPS IP **before**
+setting `SITE_ADDRESS` to it, so Caddy can complete the ACME challenge.
+
+The desktop client then points at the API base, e.g.:
+
+```
+crypttraject-client ... --server https://<domain>/api
+```
+
+**Note (prototype state):** the server keeps sessions and job results in
+process memory, so a restart drops them — fine for demos, but re-upload is
+needed after a redeploy.
+
 ## Running it (bare metal)
 
 Install once:

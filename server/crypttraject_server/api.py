@@ -14,10 +14,12 @@ Endpoints:
 from __future__ import annotations
 
 import json
+import os
 from typing import Dict
 from uuid import uuid4
 
 from fastapi import FastAPI, File, Form, HTTPException, Path, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from crypttraject_shared import (
@@ -45,6 +47,20 @@ app = FastAPI(
     version="0.1.0",
     description="Homomorphic clustering server. Never receives secret keys.",
 )
+
+# CORS: by default allow nothing extra (same-origin / non-browser clients like
+# the desktop CLI work regardless). Set CRYPTTRAJECT_CORS_ORIGINS to a
+# comma-separated list of origins (e.g. "https://crypttraject.example.com")
+# to let the browser landing page call the API cross-origin. "*" allows all.
+_cors_env = os.environ.get("CRYPTTRAJECT_CORS_ORIGINS", "").strip()
+if _cors_env:
+    _origins = ["*"] if _cors_env == "*" else [o.strip() for o in _cors_env.split(",") if o.strip()]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 store = SessionStore()
 
