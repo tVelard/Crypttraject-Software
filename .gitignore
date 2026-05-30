@@ -18,3 +18,7 @@ Thumbs.db
 
 # Deployment secrets / local config
 .env
+
+# Built installer dropped into downloads/ for the VPS to serve
+downloads/*.exe
+downloads/*.zip

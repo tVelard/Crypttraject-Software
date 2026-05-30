@@ -1,4 +1,4 @@
-"""Cross-platform build driver for CryptTraject client binaries.
+"""Build driver for the CryptTraject CLI Windows installer.
 
 Run from the repo root:
 
@@ -7,13 +7,14 @@ Run from the repo root:
 What it does:
   1. sanity-check PyInstaller + Pyfhel are importable in the current env
   2. clean previous build/ and dist/ directories
-  3. run PyInstaller on packaging/crypttraject.spec
-  4. zip the produced dist/crypttraject/ folder into a
-     CryptTraject-<os>-<arch>.zip alongside it
+  3. run PyInstaller on packaging/crypttraject.spec (CLI only)
+  4. on Windows: compile packaging/installer.iss with Inno Setup (ISCC)
+     into dist/CryptTraject-Setup.exe — a one-click installer that adds
+     crypttraject-cli to PATH with nothing else to install.
+     On other OSes: fall back to zipping dist/crypttraject/ for dev use.
 
-PyInstaller cannot cross-compile, so this must be run once per target
-OS. The GitHub Actions workflow in .github/workflows/release.yml runs
-this script on Linux, Windows, and macOS runners.
+PyInstaller cannot cross-compile and the installer targets Windows, so the
+release build runs on a Windows runner (see .github/workflows/release.yml).
 """
 
 from __future__ import annotations
@@ -29,6 +30,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "packaging" / "crypttraject.spec"
+ISS = ROOT / "packaging" / "installer.iss"
+
+# Keep in sync with pyproject.toml [project].version.
+APP_VERSION = "0.1.0"
 
 
 def fail(msg: str) -> "NoReturn":
@@ -50,11 +55,6 @@ def check_environment() -> None:
             "Pyfhel must be importable so PyInstaller can find its "
             "native SEAL extensions. Run: pip install Pyfhel"
         )
-
-    try:
-        import PySide6  # noqa: F401
-    except ImportError:
-        fail("PySide6 is not installed (needed for the GUI bundle).")
 
     print(f"[build] python   : {sys.version.split()[0]}")
     print(f"[build] platform : {platform.system()} {platform.machine()}")
@@ -82,8 +82,49 @@ def run_pyinstaller() -> None:
     subprocess.check_call(cmd, cwd=str(ROOT / "packaging"))
 
 
-def make_archive() -> Path:
-    """Zip dist/crypttraject/ into dist/CryptTraject-<os>-<arch>.zip."""
+def find_iscc() -> str | None:
+    """Locate the Inno Setup command-line compiler (ISCC.exe)."""
+    found = shutil.which("ISCC")
+    if found:
+        return found
+    candidates = [
+        Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"))
+        / "Inno Setup 6" / "ISCC.exe",
+        Path(os.environ.get("ProgramFiles", r"C:\Program Files"))
+        / "Inno Setup 6" / "ISCC.exe",
+    ]
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    return None
+
+
+def build_installer() -> Path:
+    """Compile the Inno Setup installer into dist/CryptTraject-Setup.exe."""
+    src = ROOT / "dist" / "crypttraject"
+    if not src.exists():
+        fail(f"expected PyInstaller output not found: {src}")
+
+    iscc = find_iscc()
+    if iscc is None:
+        fail(
+            "Inno Setup compiler (ISCC.exe) not found. Install Inno Setup 6 "
+            "(https://jrsoftware.org/isdl.php) or, in CI, use the "
+            "'innosetup' chocolatey package."
+        )
+
+    cmd = [iscc, f"/DAppVersion={APP_VERSION}", str(ISS)]
+    print("[build] $ " + " ".join(cmd))
+    subprocess.check_call(cmd, cwd=str(ROOT / "packaging"))
+
+    out = ROOT / "dist" / "CryptTraject-Setup.exe"
+    if not out.exists():
+        fail(f"installer was not produced: {out}")
+    return out
+
+
+def make_zip() -> Path:
+    """Fallback for non-Windows: zip dist/crypttraject/ for dev use."""
     src = ROOT / "dist" / "crypttraject"
     if not src.exists():
         fail(f"expected build output not found: {src}")
@@ -92,7 +133,7 @@ def make_archive() -> Path:
     os_tag = {"Linux": "linux", "Darwin": "macos", "Windows": "windows"}.get(
         platform.system(), platform.system().lower()
     )
-    archive = ROOT / "dist" / f"CryptTraject-{os_tag}-{arch}.zip"
+    archive = ROOT / "dist" / f"CryptTraject-cli-{os_tag}-{arch}.zip"
 
     print(f"[build] zipping {src.name}/ -> {archive.name}")
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -105,9 +146,16 @@ def main() -> int:
     check_environment()
     clean()
     run_pyinstaller()
-    archive = make_archive()
-    size_mb = archive.stat().st_size / (1024 * 1024)
-    print(f"[build] DONE — {archive} ({size_mb:.1f} MB)")
+
+    if platform.system() == "Windows":
+        out = build_installer()
+    else:
+        # The product ships a Windows installer only; other platforms get a
+        # plain zip so developers can still run the CLI locally.
+        out = make_zip()
+
+    size_mb = out.stat().st_size / (1024 * 1024)
+    print(f"[build] DONE — {out} ({size_mb:.1f} MB)")
     return 0
 
 

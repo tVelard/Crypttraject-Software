@@ -41,6 +41,10 @@ services:
     container_name: crypttraject-web
     expose:
       - "80"
+    volumes:
+      # Drop CryptTraject-Setup.exe here on the VPS; it is served at
+      # /download/CryptTraject-Setup.exe without rebuilding the image.
+      - ./downloads:/usr/share/nginx/downloads:ro
     depends_on:
       server:
         condition: service_started

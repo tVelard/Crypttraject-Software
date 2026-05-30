@@ -333,8 +333,6 @@ export default function App() {
                 "  → Uploaded 50 encrypted signatures.",
                 "  → Server returned 1225 pair ciphertexts.",
                 "  → Recovered 7 clusters (threshold = 0.50).",
-                "",
-                "$ crypttraject-gui   # même pipeline, en wizard PySide6",
               ]} />
             </FadeIn>
           </div>
@@ -380,32 +378,26 @@ export default function App() {
               Prêt à chiffrer<br /><span style={{ color: "#22c55e" }}>vos données</span> ?
             </h2>
             <p style={{ color: "#64748b", fontSize: 16, lineHeight: 1.7, marginBottom: 56, maxWidth: 520, margin: "0 auto 56px" }}>
-              Téléchargez le binaire pour votre OS, ou installez depuis les sources si vous voulez bricoler. La clé secrète est générée localement, jamais transmise.
+              Téléchargez l'installeur Windows : un double-clic installe l'outil en ligne de commande, rien d'autre à configurer. La clé secrète est générée localement, jamais transmise.
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40 }}>
-              {[
-                { os: "Linux", sub: "x86_64 · ~120 MB", icon: "🐧", asset: "CryptTraject-linux-x86_64.zip" },
-                { os: "Windows", sub: "x86_64 · ~140 MB", icon: "⊞", asset: "CryptTraject-windows-x86_64.zip" },
-                { os: "macOS", sub: "arm64 / x86_64 · ~130 MB", icon: "⌘", asset: "CryptTraject-macos-x86_64.zip" },
-              ].map(({ os, sub, icon, asset }) => (
-                <FadeIn key={os} delay={0.1}>
-                  <a href={`https://github.com/your-org/CryptTraject-Software/releases/latest/download/${asset}`}
-                    style={{ display: "block", background: "#0a1628", border: "1px solid #1e3a5f", borderRadius: 12, padding: "24px 16px", color: "inherit", textDecoration: "none", transition: "all 0.2s" }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#22c55e"; e.currentTarget.style.transform = "translateY(-4px)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#1e3a5f"; e.currentTarget.style.transform = "translateY(0)"; }}>
-                    <div style={{ fontSize: 28, marginBottom: 10 }}>{icon}</div>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: "#e2e8f0", marginBottom: 4 }}>{os}</div>
-                    <div style={{ fontSize: 12, color: "#475569" }}>{sub}</div>
-                    <div style={{ fontSize: 10, color: "#22c55e", marginTop: 8, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.1em" }}>Télécharger ↓</div>
-                  </a>
-                </FadeIn>
-              ))}
+            <div style={{ marginBottom: 40 }}>
+              <FadeIn delay={0.1}>
+                <a href="/download/CryptTraject-Setup.exe"
+                  style={{ display: "inline-block", minWidth: 300, background: "#0a1628", border: "1px solid #1e3a5f", borderRadius: 12, padding: "28px 40px", color: "inherit", textDecoration: "none", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#22c55e"; e.currentTarget.style.transform = "translateY(-4px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#1e3a5f"; e.currentTarget.style.transform = "translateY(0)"; }}>
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>⊞</div>
+                  <div style={{ fontWeight: 700, fontSize: 18, color: "#e2e8f0", marginBottom: 4 }}>Windows</div>
+                  <div style={{ fontSize: 12, color: "#475569" }}>x64 · installeur · ~140 MB</div>
+                  <div style={{ fontSize: 10, color: "#22c55e", marginTop: 8, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.1em" }}>Télécharger l'installeur ↓</div>
+                </a>
+              </FadeIn>
             </div>
 
             <FadeIn delay={0.2}>
               <div style={{ fontFamily: "monospace", fontSize: 12, color: "#475569", marginBottom: 32 }}>
-                Une fois extrait, lancez <code style={{ color: "#22c55e" }}>./crypttraject-gui</code> ou <code style={{ color: "#22c55e" }}>./crypttraject-cli --help</code>.
+                Lancez <code style={{ color: "#22c55e" }}>CryptTraject-Setup.exe</code>, puis ouvrez un terminal et tapez <code style={{ color: "#22c55e" }}>crypttraject-cli --help</code>.
               </div>
             </FadeIn>
 
@@ -420,9 +412,8 @@ export default function App() {
                   <div><span style={{ color: "#22c55e" }}>$</span> cd CryptTraject-Software</div>
                   <div style={{ color: "#64748b", marginTop: 12 }}># installer Python deps + dev install</div>
                   <div><span style={{ color: "#22c55e" }}>$</span> pip install -r requirements.txt && pip install -e .</div>
-                  <div style={{ color: "#64748b", marginTop: 12 }}># lancer le serveur puis le client</div>
-                  <div><span style={{ color: "#22c55e" }}>$</span> uvicorn crypttraject_server.api:app --port 8000</div>
-                  <div><span style={{ color: "#22c55e" }}>$</span> crypttraject-gui</div>
+                  <div style={{ color: "#64748b", marginTop: 12 }}># lancer le client en ligne de commande</div>
+                  <div><span style={{ color: "#22c55e" }}>$</span> crypttraject-client --help</div>
                 </div>
               </details>
             </FadeIn>

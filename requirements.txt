@@ -2,11 +2,10 @@
 numpy>=1.24
 Pyfhel>=3.4
 
-# Client
+# Client (CLI only — the desktop GUI has been removed)
 datasketch>=1.6
 pygeohash>=1.2
 requests>=2.31
-PySide6>=6.6
 
 # Server
 fastapi>=0.110

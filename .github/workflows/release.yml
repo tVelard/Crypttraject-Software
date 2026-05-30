@@ -1,8 +1,11 @@
-name: Build & release binaries
+name: Build & release Windows installer
 
 # Triggered manually from the Actions tab, or automatically when a tag
-# matching v* is pushed. On a tag the zips are attached to the GitHub
-# Release; on a manual run they are just uploaded as workflow artifacts.
+# matching v* is pushed. On a tag the installer is attached to the GitHub
+# Release; on a manual run it is uploaded as a workflow artifact.
+#
+# Only Windows is built: the product ships a single one-click CLI installer
+# (CryptTraject-Setup.exe) for Windows x64.
 on:
   workflow_dispatch:
   push:
@@ -11,18 +14,8 @@ on:
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            os_tag: linux
-          - os: windows-latest
-            os_tag: windows
-          - os: macos-latest
-            os_tag: macos
+    name: Build Windows installer
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -32,13 +25,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      # Pyfhel ships prebuilt wheels for most platforms but on Linux it
-      # still needs a recent libstdc++. ubuntu-latest is fine; this step
-      # is a safety net in case we ever pin to an older image.
-      - name: Install system libs (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxkbcommon0 libegl1
-
       - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
@@ -46,14 +32,17 @@ jobs:
           pip install -e .
           pip install pyinstaller>=6.3
 
-      - name: Build binaries
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
         run: python packaging/build_binaries.py
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CryptTraject-${{ matrix.os_tag }}
-          path: dist/CryptTraject-*.zip
+          name: CryptTraject-Setup
+          path: dist/CryptTraject-Setup.exe
           if-no-files-found: error
 
   release:
@@ -71,5 +60,5 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/CryptTraject-*.zip
+          files: artifacts/**/CryptTraject-Setup.exe
           generate_release_notes: true

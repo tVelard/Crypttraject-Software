@@ -77,9 +77,9 @@ docker compose up --build
 | `server` | http://localhost:8000   | FastAPI + Pyfhel — homomorphic ops       |
 | `web`    | http://localhost:5173   | Landing page (nginx serving Vite build)  |
 
-The desktop client (CLI / GUI) is **not** containerized — it needs a Qt
-display and local filesystem access. Install it on the host
-(`pip install -e .`) and point it at `http://localhost:8000`.
+The desktop client (CLI) is **not** containerized — it runs on the user's
+machine for local filesystem access and local key generation. Install it
+on the host (`pip install -e .`) and point it at `http://localhost:8000`.
 
 An optional dev shell is available behind a compose profile:
 
@@ -196,20 +196,6 @@ crypttraject-client \
 | GET    | `/session/{sid}/results/{job_id}`      | —                                                             | binary blob of pair ciphertexts |
 | DELETE | `/session/{sid}`                       | —                                                             | `{ dropped: true }`           |
 
-## Desktop GUI
-
-A PySide6 wizard wraps the same pipeline:
-
-```
-crypttraject-gui
-# or
-python -m crypttraject_client.gui
-```
-
-Four pages: **Source → Encrypt → Cluster → Results**. Long-running steps
-(BFV encryption, HTTP upload, server cluster job) run on background
-`QThread`s so the UI stays responsive.
-
 ## Landing page (web/)
 
 A React + Vite landing page lives in [web/](web/). It presents the
@@ -228,36 +214,54 @@ The page is fully static; deployment is `npm run build` then upload
 not call the FastAPI server — the install section points users to
 build the client from source.
 
-## Binary distribution
+## Windows installer (CLI)
 
-PyInstaller specs and a build driver live in [packaging/](packaging/).
-Building from a working dev environment:
+The distributed artifact is a single one-click **Windows installer**,
+`CryptTraject-Setup.exe`. The end user double-clicks it: the CLI is
+installed to Program Files and added to PATH, so `crypttraject-cli` works
+from any terminal with nothing else to install. Everything (Python,
+Pyfhel/SEAL native libs) is bundled — no separate runtime needed.
+
+Build chain in [packaging/](packaging/):
+
+1. **PyInstaller** ([crypttraject.spec](packaging/crypttraject.spec))
+   freezes the CLI into a self-contained `dist/crypttraject/` folder.
+2. **Inno Setup** ([installer.iss](packaging/installer.iss)) wraps that
+   folder into `dist/CryptTraject-Setup.exe`.
+
+Build it on Windows from a working dev environment:
 
 ```
-pip install pyinstaller
+pip install pyinstaller          # plus Inno Setup 6 (https://jrsoftware.org/isdl.php)
 python packaging/build_binaries.py
 ```
 
-Output: `dist/crypttraject/` (folder containing `crypttraject-cli` and
-`crypttraject-gui` with all shared libs) plus
-`dist/CryptTraject-<os>-<arch>.zip`.
-
-PyInstaller does **not** cross-compile, so each OS must build on its own
-runner. A GitHub Actions workflow at
-[.github/workflows/release.yml](.github/workflows/release.yml) does
-exactly that: it builds on Linux / Windows / macOS and attaches the
-three zips to the GitHub Release on every `v*` tag. Trigger it manually
-from the Actions tab to get artifacts without cutting a release.
+PyInstaller does **not** cross-compile and the installer targets Windows,
+so the build runs on a Windows runner. The GitHub Actions workflow at
+[.github/workflows/release.yml](.github/workflows/release.yml) builds the
+installer and attaches `CryptTraject-Setup.exe` to the GitHub Release on
+every `v*` tag (trigger it manually from the Actions tab to get the
+artifact without cutting a release). On non-Windows hosts
+`build_binaries.py` instead emits a plain zip for local dev use.
 
 The trickiest dependency is **Pyfhel**: its compiled SEAL extensions
 are bundled via `collect_all("Pyfhel")` in
 [packaging/crypttraject.spec](packaging/crypttraject.spec).
+
+### Serving the installer from the VPS
+
+The landing page's download button points at `/download/CryptTraject-Setup.exe`,
+served by the web container from the bind-mounted [downloads/](downloads/)
+folder. Drop the built installer there on the VPS — no image rebuild needed:
+
+```
+scp dist/CryptTraject-Setup.exe root@<VPS>:~/Crypttraject-Software/downloads/
+```
 
 ## Roadmap
 
 1. ✅ Split client / server / shared.
 2. ✅ FastAPI server exposing `POST /session`, `POST /signatures`, `POST /cluster`.
 3. ✅ Client CLI (`crypttraject-client`) wiring adapters → encryption → HTTP.
-4. ✅ Desktop GUI (`crypttraject-gui`) wrapping the same pipeline.
-5. ✅ Landing page (React + Vite) in [web/](web/).
-6. ✅ Binary distribution via PyInstaller + GitHub Actions (Linux / Windows / macOS).
+4. ✅ Landing page (React + Vite) in [web/](web/).
+5. ✅ Windows CLI installer via PyInstaller + Inno Setup + GitHub Actions.

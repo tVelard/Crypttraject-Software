@@ -1,8 +1,7 @@
-# PyInstaller spec for CryptTraject client binaries.
+# PyInstaller spec for the CryptTraject CLI binary.
 #
-# Produces two executables in one build:
+# Produces a single executable:
 #   - crypttraject-cli   (console)
-#   - crypttraject-gui   (windowed; no console on Windows/macOS)
 #
 # Run from the repo root:
 #     pyinstaller packaging/crypttraject.spec --clean --noconfirm
@@ -47,10 +46,10 @@ a_cli = Analysis(
     hookspath=[],
     runtime_hooks=[],
     excludes=[
-        # PySide6 is GUI-only, no reason to pull it into the CLI binary.
+        # The desktop GUI has been removed; never pull Qt into the bundle.
         "PySide6",
         "shiboken6",
-        # The server stack is not shipped with the client binaries.
+        # The server stack is not shipped with the client binary.
         "fastapi",
         "uvicorn",
         "starlette",
@@ -80,59 +79,8 @@ exe_cli = EXE(
     entitlements_file=None,
 )
 
-# ---------------------------------------------------------------------------
-# GUI analysis
-# ---------------------------------------------------------------------------
-
-a_gui = Analysis(
-    ["entry_gui.py"],
-    pathex=["../shared", "../client", "../server"],
-    binaries=pyfhel_binaries,
-    datas=pyfhel_datas,
-    hiddenimports=hiddenimports + collect_submodules("PySide6"),
-    hookspath=[],
-    runtime_hooks=[],
-    excludes=[
-        "fastapi",
-        "uvicorn",
-        "starlette",
-        "crypttraject_server",
-    ],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
-pyz_gui = PYZ(a_gui.pure, a_gui.zipped_data, cipher=block_cipher)
-
-exe_gui = EXE(
-    pyz_gui,
-    a_gui.scripts,
-    [],
-    exclude_binaries=True,
-    name="crypttraject-gui",
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=False,
-    # `console=False` removes the terminal window on Windows / macOS.
-    console=False,
-    disable_windowed_traceback=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-)
-
-# ---------------------------------------------------------------------------
-# Merge & collect — both binaries share libs via MERGE deduplication
-# ---------------------------------------------------------------------------
-
-MERGE((a_cli, "crypttraject-cli", "crypttraject-cli"),
-      (a_gui, "crypttraject-gui", "crypttraject-gui"))
-
 coll = COLLECT(
     exe_cli, a_cli.binaries, a_cli.zipfiles, a_cli.datas,
-    exe_gui, a_gui.binaries, a_gui.zipfiles, a_gui.datas,
     strip=False,
     upx=False,
     upx_exclude=[],
