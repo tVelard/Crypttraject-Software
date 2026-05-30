@@ -14,11 +14,6 @@
 #   /            -> web   (nginx serving the Vite build)
 #   /api/*       -> server (FastAPI), with the /api prefix stripped
 
-{
-	# Empty when SITE_ADDRESS is :80; harmless otherwise.
-	email {$ACME_EMAIL}
-}
-
 {$SITE_ADDRESS} {
 	encode gzip
 

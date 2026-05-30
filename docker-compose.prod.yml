@@ -55,7 +55,9 @@ services:
       - "443:443/udp"   # HTTP/3
     environment:
       - SITE_ADDRESS=${SITE_ADDRESS:-:80}
-      - ACME_EMAIL=${ACME_EMAIL:-}
+      # Caddy reads CADDY_ACME_EMAIL natively for Let's Encrypt registration
+      # when SITE_ADDRESS is a real domain. Ignored in :80 / HTTP-only mode.
+      - CADDY_ACME_EMAIL=${ACME_EMAIL:-}
     volumes:
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data       # persisted certificates
