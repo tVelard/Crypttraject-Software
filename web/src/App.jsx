@@ -383,7 +383,7 @@ export default function App() {
 
             <div style={{ marginBottom: 40 }}>
               <FadeIn delay={0.1}>
-                <a href="/download/CryptTraject-Setup.exe"
+                <a href="https://github.com/tVelard/Crypttraject-Software/releases/latest/download/CryptTraject-Setup.exe"
                   style={{ display: "inline-block", minWidth: 300, background: "#0a1628", border: "1px solid #1e3a5f", borderRadius: 12, padding: "28px 40px", color: "inherit", textDecoration: "none", transition: "all 0.2s" }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = "#22c55e"; e.currentTarget.style.transform = "translateY(-4px)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "#1e3a5f"; e.currentTarget.style.transform = "translateY(0)"; }}>
@@ -408,7 +408,7 @@ export default function App() {
                 </summary>
                 <div style={{ fontFamily: "monospace", fontSize: 13, lineHeight: 1.9, marginTop: 14 }}>
                   <div style={{ color: "#64748b" }}># cloner</div>
-                  <div><span style={{ color: "#22c55e" }}>$</span> git clone https://github.com/your-org/CryptTraject-Software</div>
+                  <div><span style={{ color: "#22c55e" }}>$</span> git clone https://github.com/tVelard/Crypttraject-Software</div>
                   <div><span style={{ color: "#22c55e" }}>$</span> cd CryptTraject-Software</div>
                   <div style={{ color: "#64748b", marginTop: 12 }}># installer Python deps + dev install</div>
                   <div><span style={{ color: "#22c55e" }}>$</span> pip install -r requirements.txt && pip install -e .</div>
