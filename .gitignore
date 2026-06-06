@@ -13,6 +13,7 @@ dist/
 # Local dev / test scratch
 .tmp_wheel/
 testdata/
+COMMANDES.md
 
 # IDE / OS
 .vscode/
