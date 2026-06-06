@@ -4,8 +4,8 @@ name: Build & release Windows installer
 # matching v* is pushed. On a tag the installer is attached to the GitHub
 # Release; on a manual run it is uploaded as a workflow artifact.
 #
-# Only Windows is built: the product ships a single one-click CLI installer
-# (CryptTraject-Setup.exe) for Windows x64.
+# Only Windows is built: the product ships a single one-click desktop-app
+# installer (CryptTraject-Setup.exe) for Windows x64.
 on:
   workflow_dispatch:
   push:

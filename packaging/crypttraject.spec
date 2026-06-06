@@ -1,15 +1,18 @@
-# PyInstaller spec for the CryptTraject CLI binary.
+# PyInstaller spec for the CryptTraject desktop application.
 #
-# Produces a single executable:
-#   - crypttraject-cli   (console)
+# Produces a windowed GUI executable:
+#   - CryptTraject.exe   (PySide6 / Qt, no console)
 #
 # Run from the repo root:
 #     pyinstaller packaging/crypttraject.spec --clean --noconfirm
 #
-# The tricky part is Pyfhel: it ships compiled extension modules
-# (.so / .pyd / .dll) that PyInstaller's static analysis can miss.
-# `collect_all` walks the installed package and pulls in every data
-# file + binary + submodule, which is what we need for SEAL bindings.
+# Two tricky dependencies:
+#   * Pyfhel ships compiled SEAL extensions (.pyd/.dll) that static
+#     analysis can miss — collect_all walks the package and pulls them in.
+#   * PySide6 QtWebEngine bundles a Chromium runtime (QtWebEngineProcess,
+#     .pak resources, ICU data, locales). collect_all("PySide6") embeds
+#     those so the Leaflet map renders on a machine with nothing installed.
+#     This is what makes the bundle large (~150 MB) and Windows-only here.
 
 # ruff: noqa  # PyInstaller specs are exec'd, not imported.
 
@@ -20,6 +23,9 @@ block_cipher = None
 # --- Bring in everything Pyfhel needs at runtime ---------------------------
 pyfhel_datas, pyfhel_binaries, pyfhel_hidden = collect_all("Pyfhel")
 
+# --- PySide6 + Qt WebEngine (Chromium) -------------------------------------
+pyside_datas, pyside_binaries, pyside_hidden = collect_all("PySide6")
+
 # --- Other libs that occasionally need a nudge -----------------------------
 # datasketch uses runtime imports for some hash modules.
 datasketch_hidden = collect_submodules("datasketch")
@@ -27,29 +33,30 @@ datasketch_hidden = collect_submodules("datasketch")
 # Pydantic v2 lazy-imports its core C extension.
 pydantic_hidden = collect_submodules("pydantic_core")
 
-hiddenimports = list(set(pyfhel_hidden + datasketch_hidden + pydantic_hidden + [
-    "pygeohash",
-    "numpy",
-    "requests",
-]))
+hiddenimports = list(set(
+    pyfhel_hidden + pyside_hidden + datasketch_hidden + pydantic_hidden + [
+        "pygeohash",
+        "numpy",
+        "requests",
+        "PySide6.QtWebEngineWidgets",
+        "PySide6.QtWebEngineCore",
+    ]
+))
 
 # ---------------------------------------------------------------------------
-# CLI analysis
+# GUI analysis
 # ---------------------------------------------------------------------------
 
-a_cli = Analysis(
-    ["entry_cli.py"],
+a_gui = Analysis(
+    ["entry_gui.py"],
     pathex=["../shared", "../client", "../server"],
-    binaries=pyfhel_binaries,
-    datas=pyfhel_datas,
+    binaries=pyfhel_binaries + pyside_binaries,
+    datas=pyfhel_datas + pyside_datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],
     excludes=[
-        # The desktop GUI has been removed; never pull Qt into the bundle.
-        "PySide6",
-        "shiboken6",
-        # The server stack is not shipped with the client binary.
+        # The server stack is not shipped with the desktop client.
         "fastapi",
         "uvicorn",
         "starlette",
@@ -60,19 +67,19 @@ a_cli = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
-pyz_cli = PYZ(a_cli.pure, a_cli.zipped_data, cipher=block_cipher)
+pyz_gui = PYZ(a_gui.pure, a_gui.zipped_data, cipher=block_cipher)
 
-exe_cli = EXE(
-    pyz_cli,
-    a_cli.scripts,
+exe_gui = EXE(
+    pyz_gui,
+    a_gui.scripts,
     [],
     exclude_binaries=True,
-    name="crypttraject-cli",
+    name="CryptTraject",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=True,
+    console=False,            # windowed app, no console
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
@@ -80,7 +87,7 @@ exe_cli = EXE(
 )
 
 coll = COLLECT(
-    exe_cli, a_cli.binaries, a_cli.zipfiles, a_cli.datas,
+    exe_gui, a_gui.binaries, a_gui.zipfiles, a_gui.datas,
     strip=False,
     upx=False,
     upx_exclude=[],

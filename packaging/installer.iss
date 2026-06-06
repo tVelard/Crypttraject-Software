@@ -1,10 +1,10 @@
-; Inno Setup script for the CryptTraject CLI Windows installer.
+; Inno Setup script for the CryptTraject desktop application installer.
 ;
 ; Wraps the PyInstaller output (dist/crypttraject/, a self-contained folder
-; with crypttraject-cli.exe + all native libs incl. Pyfhel/SEAL) into a
-; single CryptTraject-Setup.exe. The end user just double-clicks it: the
-; tool is installed to Program Files and added to PATH, so
-; `crypttraject-cli` works from any terminal with nothing else to install.
+; with CryptTraject.exe + all native libs incl. Pyfhel/SEAL and the Qt
+; WebEngine Chromium runtime) into a single CryptTraject-Setup.exe. The end
+; user just double-clicks it: the app is installed to Program Files with
+; Start Menu and (optional) desktop shortcuts, nothing else to install.
 ;
 ; Built by packaging/build_binaries.py via the Inno Setup compiler (ISCC).
 ; AppVersion can be overridden on the command line:
@@ -14,9 +14,9 @@
   #define AppVersion "0.1.0"
 #endif
 
-#define AppName "CryptTraject CLI"
+#define AppName "CryptTraject"
 #define AppPublisher "CryptTraject"
-#define ExeName "crypttraject-cli.exe"
+#define ExeName "CryptTraject.exe"
 
 [Setup]
 AppId={{8F3C2A11-4B7E-4D2A-9C61-CRYPTTRAJECT01}
@@ -26,8 +26,8 @@ AppPublisher={#AppPublisher}
 DefaultDirName={autopf}\CryptTraject
 DefaultGroupName=CryptTraject
 DisableProgramGroupPage=yes
-; Per-machine install puts the binary in Program Files and writes the
-; system PATH. Requires admin; the installer requests elevation.
+; Per-machine install puts the app in Program Files. Requires admin; the
+; installer requests elevation.
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
@@ -37,25 +37,31 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayName={#AppName}
+UninstallDisplayIcon={app}\{#ExeName}
 
 [Languages]
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "addtopath"; Description: "Ajouter crypttraject-cli au PATH (recommandé)"; GroupDescription: "Intégration système:"
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "addtopath"; Description: "Ajouter crypttraject-client (CLI) au PATH"; GroupDescription: "Intégration système:"; Flags: unchecked
 
 [Files]
-; Ship the entire PyInstaller folder (exe + libs + data).
+; Ship the entire PyInstaller folder (exe + libs + data + Qt WebEngine).
 Source: "..\dist\crypttraject\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
-Name: "{group}\CryptTraject CLI (invite de commande)"; Filename: "{cmd}"; Parameters: "/K ""cd /d %USERPROFILE% && echo Tapez: crypttraject-cli --help"""
+Name: "{group}\CryptTraject"; Filename: "{app}\{#ExeName}"
 Name: "{group}\Désinstaller CryptTraject"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\CryptTraject"; Filename: "{app}\{#ExeName}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\{#ExeName}"; Description: "Lancer CryptTraject"; Flags: nowait postinstall skipifsilent
 
 [Registry]
-; Add {app} to the system PATH when the task is selected. The PATH change
-; is picked up by new terminals (a fresh login guarantees it).
+; Optionally add {app} to the system PATH so the bundled CLI
+; (crypttraject-client.exe, if present) is reachable from a terminal.
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
     ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; \
     Check: NeedsAddPath('{app}'); Tasks: addtopath

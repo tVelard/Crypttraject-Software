@@ -201,14 +201,14 @@ export default function App() {
           </h1>
 
           <p style={{ fontSize: 18, color: "#94a3b8", lineHeight: 1.7, marginBottom: 48, maxWidth: 560, margin: "0 auto 48px" }}>
-            CryptTraject chiffre vos enregistrements localement avec BFV (Pyfhel) et délègue le clustering MinHash + LSH à un serveur qui ne voit jamais le clair. La clé secrète ne quitte pas votre machine.
+            CryptTraject chiffre vos données de géolocalisation localement et délègue le clustering de trajectoires à un serveur qui ne voit jamais les données en clair. Visualisez les clusters sur une carte, directement dans l'application. La clé secrète ne quitte jamais votre machine.
           </p>
 
           <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
             <a href="#telecharger" style={{ padding: "14px 32px", background: "#16a34a", color: "#fff", textDecoration: "none", borderRadius: 8, fontWeight: 600, fontSize: 15, transition: "all 0.2s", border: "2px solid #22c55e" }}
               onMouseEnter={e => { e.target.style.background = "#15803d"; e.target.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.target.style.background = "#16a34a"; e.target.style.transform = "translateY(0)"; }}>
-              Installer le client
+              Installer l'application
             </a>
             <a href="#concept" style={{ padding: "14px 32px", background: "transparent", color: "#94a3b8", textDecoration: "none", borderRadius: 8, fontWeight: 500, fontSize: 15, border: "1px solid #1e3a5f", transition: "all 0.2s" }}
               onMouseEnter={e => { e.target.style.borderColor = "#22c55e44"; e.target.style.color = "#e2e8f0"; }}
@@ -246,10 +246,10 @@ export default function App() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center", marginTop: 60 }}>
           <FadeIn delay={0.1}>
             <p style={{ color: "#94a3b8", fontSize: 16, lineHeight: 1.8, marginBottom: 24 }}>
-              Le chiffrement complètement homomorphe (FHE) permet d'opérer sur des ciphertexts comme s'ils étaient en clair. Avec le schéma <b>BFV</b>, additions et multiplications sont conservées modulo un entier — exactement ce dont a besoin MinHash pour estimer la similarité de Jaccard.
+              Le chiffrement complètement homomorphe (FHE) permet d'opérer sur des ciphertexts comme s'ils étaient en clair. Avec le schéma <b>BFV</b>, additions et multiplications sont conservées modulo un entier.
             </p>
             <p style={{ color: "#94a3b8", fontSize: 16, lineHeight: 1.8 }}>
-              Le client desktop fait tout le travail sensible : parsing, MinHash, génération de clé, chiffrement. Le serveur reçoit uniquement le contexte BFV, la clé <b>publique</b>, et les signatures chiffrées. Il calcule <code style={{ color: "#22c55e" }}>(sig_A − sig_B)²</code> sur les ciphertexts et nous renvoie le résultat, que nous seuls pouvons déchiffrer.
+              L'application de bureau fait tout le travail sensible : parsing, MinHash, génération de clé, chiffrement, <b>déchiffrement et visualisation</b>. Le serveur reçoit uniquement le contexte BFV, la clé <b>publique</b>, et les signatures chiffrées. Il calcule des clusters sur les ciphertexts et vous renvoie le résultat, que vous seuls pouvez déchiffrer — et afficher sur une carte.
             </p>
           </FadeIn>
           <FadeIn delay={0.25}>
@@ -300,10 +300,11 @@ export default function App() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {[
-                { n: "01", t: "Choix de la source", d: "CSV, JSON, JSON-Lines ou trajectoires .plt Geolife. Vous choisissez la colonne d'identifiant et l'extracteur (geohash pour des points GPS, tokens pour du texte)." },
-                { n: "02", t: "MinHash + chiffrement BFV", d: "Le client calcule la signature MinHash de chaque enregistrement, génère une paire de clés BFV (n=4096, sec=128), et chiffre. La clé secrète est sauvegardée localement, jamais transmise." },
-                { n: "03", t: "Upload des ciphertexts", d: "Trois requêtes HTTP : création de session avec le contexte et la clé publique, upload du blob de signatures chiffrées, déclenchement du job de clustering." },
-                { n: "04", t: "Calcul homomorphe + Union-Find", d: "Le serveur calcule (sig_A − sig_B)² pour chaque paire et nous renvoie les ciphertexts. Le client déchiffre, applique le seuil de Jaccard et assemble les clusters via Union-Find." },
+                { n: "01", t: "Choix de la source", d: "CSV, JSON, JSON-Lines ou trajectoires .plt Geolife. Vous choisissez la colonne d'identifiant et l'extracteur (geohash pour des points GPS, tokens pour du texte) directement dans l'application." },
+                { n: "02", t: "MinHash + chiffrement BFV", d: "L'application calcule la signature MinHash de chaque enregistrement, génère une paire de clés BFV (n=4096, sec=128), et chiffre. La clé secrète est sauvegardée localement, jamais transmise." },
+                { n: "03", t: "Upload + suivi de progression", d: "Les ciphertexts sont envoyés au serveur. L'interface affiche la progression étape par étape — chiffrement, transfert, temps de calcul serveur — avec un chrono en direct." },
+                { n: "04", t: "Calcul homomorphe + Union-Find", d: "Le serveur calcule (sig_A − sig_B)² pour chaque paire et renvoie les ciphertexts. L'application déchiffre, applique le seuil de Jaccard et assemble les clusters via Union-Find." },
+                { n: "05", t: "Visualisation sur carte", d: "Les clusters s'affichent dans une carte interactive : chaque trajectoire est colorée selon son cluster. Tout est déchiffré et tracé localement — le serveur n'a jamais vu vos données en clair. Export JSON disponible." },
               ].map(({ n, t, d }, i) => (
                 <FadeIn key={n} delay={i * 0.1}>
                   <div style={{ display: "flex", gap: 20 }}>
@@ -318,21 +319,19 @@ export default function App() {
             </div>
             <FadeIn delay={0.2}>
               <TerminalBlock lines={[
-                "# CryptTraject — exemple end-to-end",
-                "$ uvicorn crypttraject_server.api:app --port 8000",
-                "  → Server up. No secret key on disk.",
+                "# CryptTraject — déroulé d'une analyse",
+                "  Source : Geolife/Data  ·  50 trajets",
+                "  Serveur : crypttraject.rezel.net/api",
                 "",
-                "$ crypttraject-client \\",
-                "    --source plt \\",
-                "    --path \"Geolife/Data\" --limit 50 \\",
-                "    --features geohash --geohash-precision 6 \\",
-                "    --server http://localhost:8000 \\",
-                "    --key-dir ./keys",
-                "  → Computed 50 MinHash signatures locally.",
-                "  → Created BFV session a1f3...e29.",
-                "  → Uploaded 50 encrypted signatures.",
-                "  → Server returned 1225 pair ciphertexts.",
-                "  → Recovered 7 clusters (threshold = 0.50).",
+                "  ✓ Lecture + chiffrement local      1.8s",
+                "    → 50 signatures MinHash, clé BFV générée",
+                "  ✓ Envoi des signatures chiffrées   0.6s",
+                "    → 50 ciphertexts envoyés au serveur",
+                "  ⠹ Calcul serveur + déchiffrement   3.4s",
+                "    → 1225 paires, déchiffrées localement",
+                "",
+                "  [carte]  7 clusters affichés",
+                "           (seuil de Jaccard = 0.50)",
               ]} />
             </FadeIn>
           </div>
@@ -378,7 +377,7 @@ export default function App() {
               Prêt à chiffrer<br /><span style={{ color: "#22c55e" }}>vos données</span> ?
             </h2>
             <p style={{ color: "#64748b", fontSize: 16, lineHeight: 1.7, marginBottom: 56, maxWidth: 520, margin: "0 auto 56px" }}>
-              Téléchargez l'installeur Windows : un double-clic installe l'outil en ligne de commande, rien d'autre à configurer. La clé secrète est générée localement, jamais transmise.
+              Téléchargez l'installeur Windows : un double-clic installe l'application de bureau, rien d'autre à configurer. Importez vos données, suivez la progression du transfert, et visualisez les clusters sur une carte — le tout en local. La clé secrète est générée localement, jamais transmise.
             </p>
 
             <div style={{ marginBottom: 40 }}>
@@ -389,7 +388,7 @@ export default function App() {
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "#1e3a5f"; e.currentTarget.style.transform = "translateY(0)"; }}>
                   <div style={{ fontSize: 32, marginBottom: 10 }}>⊞</div>
                   <div style={{ fontWeight: 700, fontSize: 18, color: "#e2e8f0", marginBottom: 4 }}>Windows</div>
-                  <div style={{ fontSize: 12, color: "#475569" }}>x64 · installeur · ~140 MB</div>
+                  <div style={{ fontSize: 12, color: "#475569" }}>x64 · application de bureau · ~180 MB</div>
                   <div style={{ fontSize: 10, color: "#22c55e", marginTop: 8, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.1em" }}>Télécharger l'installeur ↓</div>
                 </a>
               </FadeIn>
@@ -397,7 +396,7 @@ export default function App() {
 
             <FadeIn delay={0.2}>
               <div style={{ fontFamily: "monospace", fontSize: 12, color: "#475569", marginBottom: 32 }}>
-                Lancez <code style={{ color: "#22c55e" }}>CryptTraject-Setup.exe</code>, puis ouvrez un terminal et tapez <code style={{ color: "#22c55e" }}>crypttraject-cli --help</code>.
+                Lancez <code style={{ color: "#22c55e" }}>CryptTraject-Setup.exe</code>, puis ouvrez <code style={{ color: "#22c55e" }}>CryptTraject</code> depuis le menu Démarrer.
               </div>
             </FadeIn>
 
@@ -412,7 +411,9 @@ export default function App() {
                   <div><span style={{ color: "#22c55e" }}>$</span> cd CryptTraject-Software</div>
                   <div style={{ color: "#64748b", marginTop: 12 }}># installer Python deps + dev install</div>
                   <div><span style={{ color: "#22c55e" }}>$</span> pip install -r requirements.txt && pip install -e .</div>
-                  <div style={{ color: "#64748b", marginTop: 12 }}># lancer le client en ligne de commande</div>
+                  <div style={{ color: "#64748b", marginTop: 12 }}># lancer l'application de bureau</div>
+                  <div><span style={{ color: "#22c55e" }}>$</span> python -m crypttraject_client.gui</div>
+                  <div style={{ color: "#64748b", marginTop: 12 }}># ou en ligne de commande</div>
                   <div><span style={{ color: "#22c55e" }}>$</span> crypttraject-client --help</div>
                 </div>
               </details>

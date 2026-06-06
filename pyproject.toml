@@ -13,3 +13,6 @@ where = ["shared", "client", "server"]
 
 [project.scripts]
 crypttraject-client = "crypttraject_client.cli:main"
+
+[project.gui-scripts]
+crypttraject-gui = "crypttraject_client.gui:run"

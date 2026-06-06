@@ -2,10 +2,13 @@
 numpy>=1.24
 Pyfhel>=3.4
 
-# Client (CLI only — the desktop GUI has been removed)
+# Client (CLI + desktop GUI)
 datasketch>=1.6
 pygeohash>=1.2
 requests>=2.31
+# Desktop GUI. PySide6-Essentials pulls in Qt WebEngine (Chromium) used to
+# render the Leaflet cluster map. Big (~150 MB frozen) but fully offline-capable.
+PySide6>=6.6
 
 # Server
 fastapi>=0.110

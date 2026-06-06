@@ -1,16 +1,17 @@
-"""Build driver for the CryptTraject CLI Windows installer.
+"""Build driver for the CryptTraject desktop-app Windows installer.
 
 Run from the repo root:
 
     python packaging/build_binaries.py
 
 What it does:
-  1. sanity-check PyInstaller + Pyfhel are importable in the current env
+  1. sanity-check PyInstaller + Pyfhel + PySide6 are importable in the env
   2. clean previous build/ and dist/ directories
-  3. run PyInstaller on packaging/crypttraject.spec (CLI only)
+  3. run PyInstaller on packaging/crypttraject.spec (windowed GUI app)
   4. on Windows: compile packaging/installer.iss with Inno Setup (ISCC)
-     into dist/CryptTraject-Setup.exe — a one-click installer that adds
-     crypttraject-cli to PATH with nothing else to install.
+     into dist/CryptTraject-Setup.exe — a one-click installer that drops
+     the app in Program Files with Start Menu / desktop shortcuts and
+     nothing else to install.
      On other OSes: fall back to zipping dist/crypttraject/ for dev use.
 
 PyInstaller cannot cross-compile and the installer targets Windows, so the
@@ -54,6 +55,15 @@ def check_environment() -> None:
             "Pyfhel is not installed in this environment. "
             "Pyfhel must be importable so PyInstaller can find its "
             "native SEAL extensions. Run: pip install Pyfhel"
+        )
+
+    try:
+        import PySide6  # noqa: F401
+    except ImportError:
+        fail(
+            "PySide6 is not installed in this environment. "
+            "The desktop app and its Qt WebEngine map need it. "
+            "Run: pip install PySide6"
         )
 
     print(f"[build] python   : {sys.version.split()[0]}")
