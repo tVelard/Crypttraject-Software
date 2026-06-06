@@ -1,7 +1,7 @@
 """CryptTraject client-side library.
 
 Responsibilities (and ONLY these):
-  * Parse a local data source via an adapter (CSV / JSON / .plt / SQL ...).
+  * Parse a local Geolife .plt trajectory directory via an adapter.
   * Compute MinHash signatures locally.
   * Generate / persist a BFV key pair locally.
   * Encrypt signatures and prepare the SessionDescriptor + SignaturePayload

@@ -17,15 +17,9 @@ from ..keys import ClientSession
 
 @dataclass
 class AppState:
-    # ---- source ----
-    source_kind: str = "plt"             # "csv" | "json" | "jsonl" | "plt"
+    # ---- source: a Geolife .plt trajectory directory ----
     source_path: Optional[Path] = None
-    id_column: str = "id"
-    point_columns: Optional[Tuple[str, str]] = None  # ("lat", "lon")
-    id_field: str = "id"
-    feature_kind: str = "geohash"        # "geohash" | "tokens"
     geohash_precision: int = 6
-    text_fields: List[str] = field(default_factory=list)
     limit: Optional[int] = 50
 
     # ---- BFV / LSH ----
@@ -36,6 +30,9 @@ class AppState:
 
     # ---- server ----
     server_url: str = "https://crypttraject.rezel.net/api"
+    # HTTP timeout (seconds). The /cluster step is O(n^2) and CPU-heavy on the
+    # server, so this is generous; raise it further for very large runs.
+    server_timeout: float = 600.0
     key_dir: Optional[Path] = None
 
     # ---- runtime artifacts ----

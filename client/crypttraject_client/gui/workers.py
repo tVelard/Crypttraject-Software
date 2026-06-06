@@ -14,13 +14,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal
 
-from ..adapters import (
-    CSVAdapter,
-    FieldTokenExtractor,
-    GeoHashExtractor,
-    JSONAdapter,
-    PLTGeolifeAdapter,
-)
+from ..adapters import GeoHashExtractor, PLTGeolifeAdapter
 from ..decrypt import build_clusters
 from ..keys import ClientSession
 from ..minhash import compute_minhash
@@ -32,40 +26,18 @@ from .state import AppState
 # ---------------------------------------------------------------------------
 
 def _make_adapter(state: AppState):
-    if state.source_kind == "csv":
-        return CSVAdapter(
-            path=state.source_path,
-            id_column=state.id_column,
-            point_columns=list(state.point_columns) if state.point_columns else None,
-            limit=state.limit,
-        )
-    if state.source_kind in ("json", "jsonl"):
-        return JSONAdapter(
-            path=state.source_path,
-            id_field=state.id_field,
-            jsonl=(state.source_kind == "jsonl"),
-            limit=state.limit,
-        )
-    if state.source_kind == "plt":
-        return PLTGeolifeAdapter(dataset_dir=state.source_path, limit=state.limit)
-    raise ValueError(f"unknown source kind: {state.source_kind}")
+    return PLTGeolifeAdapter(dataset_dir=state.source_path, limit=state.limit)
 
 
 def _make_extractor(state: AppState):
-    if state.feature_kind == "geohash":
-        return GeoHashExtractor(points_field="points", precision=state.geohash_precision)
-    if state.feature_kind == "tokens":
-        if not state.text_fields:
-            raise ValueError("token features require at least one text field")
-        return FieldTokenExtractor(fields=list(state.text_fields))
-    raise ValueError(f"unknown feature kind: {state.feature_kind}")
+    return GeoHashExtractor(points_field="points", precision=state.geohash_precision)
 
 
 def _extract_points(record) -> List[Tuple[float, float]]:
     """Pull raw (lat, lon) pairs from a record payload, if any.
 
-    Used purely for the local map view. Returns [] for non-geographic
-    sources (token features), which the UI falls back to a table for.
+    Used purely for the local map view. Returns [] when a record carries no
+    usable coordinates, in which case the UI falls back to a table.
     """
     raw = record.payload.get("points")
     if not raw:
@@ -187,7 +159,10 @@ class EncryptUploadWorker(_BaseWorker):
             self.state.session = session
 
             from ..http_client import ServerClient
-            server = ServerClient(base_url=self.state.server_url.rstrip("/"))
+            server = ServerClient(
+                base_url=self.state.server_url.rstrip("/"),
+                timeout=self.state.server_timeout,
+            )
 
             self.log.emit("Registering session on the server (public material only)...")
             server.create_session(session)
@@ -217,7 +192,10 @@ class ClusterWorker(_BaseWorker):
                 raise RuntimeError("no active client session — re-run the encryption step")
 
             from ..http_client import ServerClient
-            server = ServerClient(base_url=self.state.server_url.rstrip("/"))
+            server = ServerClient(
+                base_url=self.state.server_url.rstrip("/"),
+                timeout=self.state.server_timeout,
+            )
 
             self.log.emit(f"Asking server to compute pair ciphertexts (threshold={self.state.threshold:.2f})...")
             result = server.run_cluster(self.state.session, threshold=self.state.threshold)

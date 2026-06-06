@@ -1,9 +1,9 @@
 """Screen 3 — visualise the decrypted clusters.
 
-For geographic sources, each record's trajectory is drawn as a Leaflet
-polyline coloured by its cluster, inside a QWebEngineView. For non-geographic
-sources (token features), there are no coordinates to plot, so we fall back
-to a simple cluster/size table.
+Each record's trajectory is drawn as a Leaflet polyline coloured by its
+cluster, inside a QWebEngineView. As a safety fallback (no usable
+coordinates, or QtWebEngine unavailable), a simple cluster/size table is
+shown instead.
 
 Either way, the data shown here was decrypted locally — the server never
 saw it in the clear.

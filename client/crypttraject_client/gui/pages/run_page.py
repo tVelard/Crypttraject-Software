@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import Qt, QThread, QTimer, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -26,7 +26,6 @@ from ..workers import (
     ClusterWorker,
     EncryptUploadWorker,
     IngestWorker,
-    run_in_thread,
 )
 
 
@@ -97,8 +96,12 @@ class RunPage(QWidget):
     def __init__(self, state: AppState):
         super().__init__()
         self.state = state
-        self._thread = None
-        self._worker = None
+        # Keep a strong reference to every (worker, thread) pair until the
+        # thread has actually finished and been destroyed. Dropping the last
+        # Python reference to a still-running QThread crashes the process with
+        # "QThread: Destroyed while thread is still running".
+        self._jobs: list = []
+        self._current_step = self.STEP_INGEST
         self._build()
 
         # ~10 Hz UI tick drives the spinners + timers.
@@ -178,6 +181,14 @@ class RunPage(QWidget):
     # ------------------------------------------------------------------
 
     def _run_step(self, step: int) -> None:
+        # IMPORTANT: every slot below must be a *bound method of this QObject*
+        # (which lives on the GUI thread), NEVER a lambda. A lambda has no
+        # QObject receiver, so Qt has no target thread to queue the call onto
+        # and runs it directly inside the worker thread — touching widgets /
+        # timers / the painter off-thread, which crashes the process. Bound
+        # methods carry this widget's thread affinity, so cross-thread signals
+        # are auto-queued onto the GUI thread.
+        self._current_step = step
         self.steps[step].set_state(_StepRow.RUNNING)
         if step == self.STEP_INGEST:
             worker = IngestWorker(self.state)
@@ -189,9 +200,32 @@ class RunPage(QWidget):
             worker = ClusterWorker(self.state)
             worker.done.connect(self._cluster_done)
         worker.log.connect(self._append_log)
-        worker.failed.connect(lambda msg, s=step: self._step_failed(s, msg))
-        self._worker = worker
-        self._thread = run_in_thread(worker)
+        worker.failed.connect(self._on_worker_failed)
+
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        # Tear down in order: worker.finished -> thread.quit, then once the
+        # thread has fully stopped, drop our reference. We hold the pair in
+        # self._jobs until the thread is destroyed so it can never be
+        # garbage-collected while still running.
+        worker.finished.connect(thread.quit)
+        self._jobs.append((worker, thread))
+        thread.finished.connect(self._on_thread_finished)
+        thread.start()
+
+    def _on_worker_failed(self, message: str) -> None:
+        """Worker.failed slot (GUI thread). Uses the step that was running."""
+        self._step_failed(self._current_step, message)
+
+    def _on_thread_finished(self) -> None:
+        """A QThread finished — drop any of our jobs whose thread has stopped."""
+        for job in list(self._jobs):
+            _worker, thread = job
+            if thread.isFinished():
+                self._jobs.remove(job)
+                _worker.deleteLater()
+                thread.deleteLater()
 
     def _ingest_done(self, signatures: dict, points: dict) -> None:
         self.state.signatures = signatures

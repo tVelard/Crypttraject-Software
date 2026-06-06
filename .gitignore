@@ -10,6 +10,10 @@ build/
 dist/
 *.spec.bak
 
+# Local dev / test scratch
+.tmp_wheel/
+testdata/
+
 # IDE / OS
 .vscode/
 .idea/

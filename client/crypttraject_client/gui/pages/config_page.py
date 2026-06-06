@@ -1,4 +1,4 @@
-"""Screen 1 — pick a data source, feature extractor, and the server.
+"""Screen 1 — pick a Geolife .plt directory and the server.
 
 Everything entered here is validated and written into AppState before the
 run starts. Nothing is uploaded from this screen: parsing and hashing are
@@ -11,7 +11,6 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QComboBox,
     QDoubleSpinBox,
     QFileDialog,
     QFormLayout,
@@ -22,7 +21,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSpinBox,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -57,66 +55,32 @@ class ConfigPage(QWidget):
 
         root.addWidget(QLabel(
             "<h2>Configuration</h2>"
-            "<p>Pick where your records live and which server to use. Parsing "
-            "and hashing happen <b>locally</b>; the server only ever sees "
-            "encrypted signatures.</p>"
+            "<p>Pick a Geolife <b>.plt</b> trajectory directory and the server "
+            "to use. Parsing and hashing happen <b>locally</b>; the server only "
+            "ever sees encrypted signatures.</p>"
         ))
 
-        # --- Source group ---
-        src_box = QGroupBox("Source")
+        # --- Source group: a Geolife .plt directory ---
+        src_box = QGroupBox("Source — Geolife .plt directory")
         src_form = QFormLayout(src_box)
-
-        self.kind = QComboBox()
-        self.kind.addItems(["plt", "csv", "json", "jsonl"])
-        self.kind.currentTextChanged.connect(self._on_kind_changed)
-        src_form.addRow("Format:", self.kind)
 
         path_row = QHBoxLayout()
         self.path_edit = QLineEdit()
+        self.path_edit.setPlaceholderText("…/Geolife Trajectories 1.3/Data")
         browse = QPushButton("Browse…")
         browse.clicked.connect(self._browse)
         path_row.addWidget(self.path_edit, 1)
         path_row.addWidget(browse)
-        src_form.addRow("Path:", path_row)
-
-        self.source_stack = QStackedWidget()
-        self.source_stack.addWidget(QWidget())              # plt: no options
-        csv_w = QWidget(); csv_f = QFormLayout(csv_w)
-        self.csv_id_col = QLineEdit("id")
-        self.csv_points = QLineEdit("")
-        self.csv_points.setPlaceholderText("e.g. lat,lon (leave empty for flat rows)")
-        csv_f.addRow("Id column:", self.csv_id_col)
-        csv_f.addRow("Point columns:", self.csv_points)
-        self.source_stack.addWidget(csv_w)                  # csv
-        json_w = QWidget(); json_f = QFormLayout(json_w)
-        self.json_id_field = QLineEdit("id")
-        json_f.addRow("Id field:", self.json_id_field)
-        self.source_stack.addWidget(json_w)                 # json
-        self.source_stack.addWidget(json_w)                 # jsonl reuses it
-        src_form.addRow("Options:", self.source_stack)
+        src_form.addRow("Directory:", path_row)
         root.addWidget(src_box)
 
-        # --- Feature extractor group ---
+        # --- Feature extraction group (geohash on lat/lon points) ---
         feat_box = QGroupBox("Feature extraction")
         feat_form = QFormLayout(feat_box)
-        self.feature_kind = QComboBox()
-        self.feature_kind.addItems(["geohash", "tokens"])
-        self.feature_kind.currentTextChanged.connect(self._on_feature_changed)
-        feat_form.addRow("Mode:", self.feature_kind)
-
-        self.feat_stack = QStackedWidget()
-        gh_w = QWidget(); gh_f = QFormLayout(gh_w)
         self.geohash_precision = QSpinBox()
         self.geohash_precision.setRange(1, 12)
         self.geohash_precision.setValue(6)
-        gh_f.addRow("Geohash precision:", self.geohash_precision)
-        self.feat_stack.addWidget(gh_w)
-        tok_w = QWidget(); tok_f = QFormLayout(tok_w)
-        self.text_fields = QLineEdit()
-        self.text_fields.setPlaceholderText("comma-separated, e.g. title,tags,description")
-        tok_f.addRow("Text fields:", self.text_fields)
-        self.feat_stack.addWidget(tok_w)
-        feat_form.addRow("Options:", self.feat_stack)
+        feat_form.addRow("Geohash precision:", self.geohash_precision)
         root.addWidget(feat_box)
 
         # --- Server + clustering group ---
@@ -131,6 +95,11 @@ class ConfigPage(QWidget):
         srv_form.addRow("Similarity threshold:", self.threshold)
         self.limit = QSpinBox(); self.limit.setRange(2, 100000); self.limit.setValue(50)
         srv_form.addRow("Max records:", self.limit)
+        self.server_timeout = QSpinBox()
+        self.server_timeout.setRange(30, 3600); self.server_timeout.setSingleStep(30)
+        self.server_timeout.setValue(int(self.state.server_timeout))
+        self.server_timeout.setSuffix(" s")
+        srv_form.addRow("Server timeout:", self.server_timeout)
         self.num_perm = QSpinBox()
         self.num_perm.setRange(16, 2048); self.num_perm.setSingleStep(16); self.num_perm.setValue(128)
         srv_form.addRow("MinHash permutations:", self.num_perm)
@@ -151,29 +120,10 @@ class ConfigPage(QWidget):
         footer.addWidget(self.run_btn)
         outer.addLayout(footer)
 
-        self._on_kind_changed(self.kind.currentText())
-        self._on_feature_changed(self.feature_kind.currentText())
-
     # ------------------------------------------------------------------
 
-    def _on_kind_changed(self, kind: str) -> None:
-        idx = {"plt": 0, "csv": 1, "json": 2, "jsonl": 3}.get(kind, 0)
-        self.source_stack.setCurrentIndex(idx)
-
-    def _on_feature_changed(self, kind: str) -> None:
-        self.feat_stack.setCurrentIndex(0 if kind == "geohash" else 1)
-
     def _browse(self) -> None:
-        kind = self.kind.currentText()
-        if kind == "plt":
-            path = QFileDialog.getExistingDirectory(self, "Pick a Geolife .plt directory")
-        else:
-            patterns = {
-                "csv": "CSV (*.csv)",
-                "json": "JSON (*.json)",
-                "jsonl": "JSON-Lines (*.jsonl *.ndjson)",
-            }
-            path, _ = QFileDialog.getOpenFileName(self, "Pick a data file", "", patterns.get(kind, "All (*)"))
+        path = QFileDialog.getExistingDirectory(self, "Pick a Geolife .plt directory")
         if path:
             self.path_edit.setText(path)
 
@@ -191,36 +141,21 @@ class ConfigPage(QWidget):
     def _validate_and_save(self) -> None:
         path = self.path_edit.text().strip()
         if not path:
-            raise ValueError("Pick a source path first.")
+            raise ValueError("Pick a Geolife .plt directory first.")
         p = Path(path)
         if not p.exists():
-            raise ValueError(f"Path does not exist: {p}")
+            raise ValueError(f"Directory does not exist: {p}")
+        if not p.is_dir():
+            raise ValueError(f"Not a directory: {p}")
 
         server = self.server_url.text().strip()
         if not server:
             raise ValueError("Enter a server URL.")
         self.state.server_url = server
 
-        kind = self.kind.currentText()
-        self.state.source_kind = kind
         self.state.source_path = p
-
-        if kind == "csv":
-            self.state.id_column = self.csv_id_col.text().strip() or "id"
-            pc = self.csv_points.text().strip()
-            self.state.point_columns = tuple(c.strip() for c in pc.split(",")) if pc else None
-        elif kind in ("json", "jsonl"):
-            self.state.id_field = self.json_id_field.text().strip() or "id"
-
-        self.state.feature_kind = self.feature_kind.currentText()
-        if self.state.feature_kind == "geohash":
-            self.state.geohash_precision = self.geohash_precision.value()
-        else:
-            fields = [f.strip() for f in self.text_fields.text().split(",") if f.strip()]
-            if not fields:
-                raise ValueError("Token mode needs at least one text field.")
-            self.state.text_fields = fields
-
+        self.state.geohash_precision = self.geohash_precision.value()
         self.state.threshold = self.threshold.value()
         self.state.limit = self.limit.value()
+        self.state.server_timeout = float(self.server_timeout.value())
         self.state.num_perm = self.num_perm.value()

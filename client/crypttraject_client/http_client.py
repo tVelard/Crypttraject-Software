@@ -27,7 +27,10 @@ from .keys import ClientSession
 @dataclass
 class ServerClient:
     base_url: str
-    timeout: float = 60.0
+    # The /cluster step runs an O(n^2) homomorphic pipeline on the server and
+    # can take several minutes for a few dozen trajectories. Keep a generous
+    # default so the client doesn't give up before the server is done.
+    timeout: float = 600.0
 
     # ------------------------------------------------------------------
 

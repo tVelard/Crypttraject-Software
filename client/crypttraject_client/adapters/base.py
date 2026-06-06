@@ -2,9 +2,8 @@
 
 `DataSourceAdapter` yields `Record`s (one per logical entity to cluster).
 `FeatureExtractor` turns a record into a set of feature tokens that
-MinHash will hash. Splitting the two means a CSV adapter can be paired
-with either a geohash extractor (lat/lon columns) or a token extractor
-(text columns) without writing two adapters.
+MinHash will hash. Splitting the two means a geohash extractor can be
+reused across any adapter (CSV / JSON / .plt) that exposes lat/lon points.
 """
 
 from __future__ import annotations

@@ -278,8 +278,8 @@ export default function App() {
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
             <SchemaCard title="MinHash" tag="Côté client" accent="#22c55e"
-              desc="Résume chaque enregistrement en une signature de taille fixe à partir d'un ensemble de tokens (geohash, n-grammes…)."
-              features={["128 permutations par défaut", "Estimation Jaccard en O(1)", "Geohash pour trajectoires GPS", "Tokens texte pour CSV/JSON"]} />
+              desc="Résume chaque trajectoire en une signature de taille fixe à partir de ses cellules geohash."
+              features={["128 permutations par défaut", "Estimation Jaccard en O(1)", "Geohash pour trajectoires GPS", "Jeu de données Geolife (.plt)"]} />
             <SchemaCard title="BFV" tag="Sur le serveur" accent="#3b82f6"
               desc="Schéma Brakerski-Fan-Vercauteren via Pyfhel. Permet additions et multiplications sur ciphertexts entiers."
               features={["n = 4096, t = 65537, sec = 128", "Batching SIMD (2048 slots)", "Test d'égalité via (x−y)²", "Clé secrète exclusivement locale"]} />
@@ -300,7 +300,7 @@ export default function App() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {[
-                { n: "01", t: "Choix de la source", d: "CSV, JSON, JSON-Lines ou trajectoires .plt Geolife. Vous choisissez la colonne d'identifiant et l'extracteur (geohash pour des points GPS, tokens pour du texte) directement dans l'application." },
+                { n: "01", t: "Choix de la source", d: "Un répertoire de trajectoires .plt Geolife. Vous choisissez le dossier et la précision geohash des points GPS, directement dans l'application." },
                 { n: "02", t: "MinHash + chiffrement BFV", d: "L'application calcule la signature MinHash de chaque enregistrement, génère une paire de clés BFV (n=4096, sec=128), et chiffre. La clé secrète est sauvegardée localement, jamais transmise." },
                 { n: "03", t: "Upload + suivi de progression", d: "Les ciphertexts sont envoyés au serveur. L'interface affiche la progression étape par étape — chiffrement, transfert, temps de calcul serveur — avec un chrono en direct." },
                 { n: "04", t: "Calcul homomorphe + Union-Find", d: "Le serveur calcule (sig_A − sig_B)² pour chaque paire et renvoie les ciphertexts. L'application déchiffre, applique le seuil de Jaccard et assemble les clusters via Union-Find." },
@@ -342,17 +342,16 @@ export default function App() {
       <section style={{ padding: "80px 48px", background: "#050d1a", borderTop: "1px solid #0f2337" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <FadeIn>
-            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase", textAlign: "center" }}>04 — Formats pris en charge</div>
+            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase", textAlign: "center" }}>04 — Données prises en charge</div>
             <p style={{ color: "#64748b", fontSize: 14, marginBottom: 48, maxWidth: 540, margin: "0 auto 48px", textAlign: "center" }}>
-              Le système d'adaptateurs rend l'ingestion ouverte : ajouter un nouveau format = écrire une sous-classe de <code style={{ color: "#22c55e" }}>DataSourceAdapter</code>. Voici ce qui est embarqué de base.
+              CryptTraject ingère les trajectoires GPS du jeu de données <b>Geolife</b> (Microsoft Research), au format <code style={{ color: "#22c55e" }}>.plt</code>. L'architecture par adaptateurs reste extensible : ajouter une source = écrire une sous-classe de <code style={{ color: "#22c55e" }}>DataSourceAdapter</code>.
             </p>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, maxWidth: 880, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, maxWidth: 720, margin: "0 auto" }}>
             {[
-              { fmt: "CSV", detail: "Lignes plates ou groupées par id" },
-              { fmt: "JSON", detail: "Tableau d'objets" },
-              { fmt: "JSON-Lines", detail: "Un objet par ligne" },
-              { fmt: ".plt", detail: "Trajectoires Geolife" },
+              { fmt: ".plt", detail: "Trajectoires Geolife (Microsoft Research)" },
+              { fmt: "lat / lon", detail: "Points GPS → cellules geohash" },
+              { fmt: "extensible", detail: "Sous-classe DataSourceAdapter" },
             ].map(({ fmt, detail }, i) => (
               <FadeIn key={fmt} delay={i * 0.07}>
                 <div style={{ background: "#0a1628", border: "1px solid #1e3a5f", borderRadius: 10, padding: "20px 12px", textAlign: "center", transition: "border-color 0.2s" }}

@@ -10,8 +10,8 @@ def compute_minhash(features: Iterable[bytes], num_perm: int = 128) -> np.ndarra
     """Hash an iterable of feature tokens into a MinHash signature.
 
     Caller is responsible for turning a record into a deduplicated set of
-    `bytes` tokens (geohash cells, n-grams, normalized terms, ...). The
-    adapter layer handles that domain-specific work.
+    `bytes` tokens (geohash cells). The adapter layer handles that
+    domain-specific work.
     """
     m = MinHash(num_perm=num_perm)
     for tok in features:
