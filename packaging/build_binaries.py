@@ -34,7 +34,7 @@ SPEC = ROOT / "packaging" / "crypttraject.spec"
 ISS = ROOT / "packaging" / "installer.iss"
 
 # Keep in sync with pyproject.toml [project].version.
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.4.0"
 
 
 def fail(msg: str) -> "NoReturn":
@@ -127,29 +127,46 @@ def build_installer() -> Path:
     print("[build] $ " + " ".join(cmd))
     subprocess.check_call(cmd, cwd=str(ROOT / "packaging"))
 
-    out = ROOT / "dist" / "CryptTraject-Setup.exe"
+    out = ROOT / "dist" / "CryptTraject-Setup-x64.exe"
     if not out.exists():
         fail(f"installer was not produced: {out}")
     return out
 
+def release_zip_name() -> str:
+    """Nom de fichier attendu par release.yml."""
+    system = platform.system()
+    machine = platform.machine().lower().replace("amd64", "x86_64")
+
+    if system == "Windows":
+        return "CryptTraject-Windows-x64-portable.zip"
+    if system == "Linux":
+        return "CryptTraject-Linux-x86_64.zip"
+    if system == "Darwin":
+        # macos-latest sur GitHub = Apple Silicon
+        if machine in ("arm64", "aarch64"):
+            return "CryptTraject-macOS-arm64.zip"
+        return "CryptTraject-macOS-x64.zip"
+    fail(f"unsupported platform: {system} {machine}")
+
 
 def make_zip() -> Path:
-    """Fallback for non-Windows: zip dist/crypttraject/ for dev use."""
     src = ROOT / "dist" / "crypttraject"
     if not src.exists():
         fail(f"expected build output not found: {src}")
 
-    arch = platform.machine().lower().replace("amd64", "x86_64")
-    os_tag = {"Linux": "linux", "Darwin": "macos", "Windows": "windows"}.get(
-        platform.system(), platform.system().lower()
-    )
-    archive = ROOT / "dist" / f"CryptTraject-cli-{os_tag}-{arch}.zip"
-
+    archive = ROOT / "dist" / release_zip_name()
     print(f"[build] zipping {src.name}/ -> {archive.name}")
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
         for f in src.rglob("*"):
-            zf.write(f, arcname=f.relative_to(src.parent))
+            if f.is_file():
+                zf.write(f, arcname=f.relative_to(src.parent))
     return archive
+
+
+def build_windows_outputs() -> list[Path]:
+    installer = build_installer()   # CryptTraject-Setup-x64.exe
+    portable = make_zip()           # CryptTraject-Windows-x64-portable.zip
+    return [installer, portable]
 
 
 def main() -> int:
@@ -158,14 +175,13 @@ def main() -> int:
     run_pyinstaller()
 
     if platform.system() == "Windows":
-        out = build_installer()
+        outputs = build_windows_outputs()
     else:
-        # The product ships a Windows installer only; other platforms get a
-        # plain zip so developers can still run the CLI locally.
-        out = make_zip()
+        outputs = [make_zip()]
 
-    size_mb = out.stat().st_size / (1024 * 1024)
-    print(f"[build] DONE — {out} ({size_mb:.1f} MB)")
+    for out in outputs:
+        size_mb = out.stat().st_size / (1024 * 1024)
+        print(f"[build] DONE — {out.name} ({size_mb:.1f} MB)")
     return 0
 
 

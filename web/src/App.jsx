@@ -420,7 +420,7 @@ export default function App() {
 
             <FadeIn delay={0.3}>
               <div style={{ fontFamily: "monospace", fontSize: 13, color: "#64748b", background: "#050d1a", border: "1px solid #1e3a5f", borderRadius: 8, padding: "12px 20px", display: "inline-block" }}>
-                crypttraject v0.1.0 &nbsp;·&nbsp; Python 3.10+ &nbsp;·&nbsp; BFV via Pyfhel
+                crypttraject v0.4.0 &nbsp;·&nbsp; Python 3.10+ &nbsp;·&nbsp; BFV via Pyfhel
               </div>
             </FadeIn>
           </FadeIn>
