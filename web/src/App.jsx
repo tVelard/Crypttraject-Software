@@ -1,5 +1,108 @@
 import { useState, useEffect, useRef } from "react";
 
+const RELEASE_BASE =
+  "https://github.com/tVelard/Crypttraject-Software/releases/latest/download";
+
+const APP_VERSION = "0.4.0";
+
+const DOWNLOADS = [
+  {
+    id: "windows-installer",
+    platforms: ["win32"],
+    icon: "⊞",
+    title: "Windows — Installeur",
+    subtitle: "x64 · ~180 MB · recommandé",
+    file: "CryptTraject-Setup-x64.exe",
+    cta: "Télécharger l'installeur ↓",
+    hint: "Double-clic → menu Démarrer → CryptTraject",
+  },
+  {
+    id: "windows-portable",
+    platforms: ["win32"],
+    icon: "⊞",
+    title: "Windows — Portable",
+    subtitle: "x64 · zip · sans installation",
+    file: "CryptTraject-Windows-x64-portable.zip",
+    cta: "Télécharger le zip ↓",
+    hint: "Extraire, puis lancer crypttraject/CryptTraject.exe",
+  },
+  {
+    id: "linux",
+    platforms: ["linux"],
+    icon: "🐧",
+    title: "Linux",
+    subtitle: "x86_64 · zip · AppImage à venir",
+    file: "CryptTraject-Linux-x86_64.zip",
+    cta: "Télécharger ↓",
+    hint: "Extraire, chmod +x crypttraject/CryptTraject, puis lancer",
+  },
+  {
+    id: "macos",
+    platforms: ["darwin"],
+    icon: "",
+    title: "macOS",
+    subtitle: "Apple Silicon (arm64) · zip",
+    file: "CryptTraject-macOS-arm64.zip",
+    cta: "Télécharger ↓",
+    hint: "Clic droit → Ouvrir si macOS bloque l'app non signée",
+  },
+];
+
+function detectPlatform() {
+  const ua = navigator.userAgentData;
+  if (ua?.platform) {
+    const p = ua.platform.toLowerCase();
+    if (p.includes("win")) return "win32";
+    if (p.includes("linux")) return "linux";
+    if (p.includes("mac")) return "darwin";
+  }
+  const nav = navigator.platform?.toLowerCase() ?? "";
+  if (nav.includes("win")) return "win32";
+  if (nav.includes("linux")) return "linux";
+  if (nav.includes("mac")) return "darwin";
+  return "unknown";
+}
+
+function downloadUrl(file) {
+  return `${RELEASE_BASE}/${file}`;
+}
+
+const DownloadCard = ({ item, highlighted = false }) => (
+  <a
+    href={downloadUrl(item.file)}
+    style={{
+      display: "block",
+      background: highlighted ? "#0d1f35" : "#0a1628",
+      border: highlighted ? "1px solid #22c55e" : "1px solid #1e3a5f",
+      borderRadius: 12,
+      padding: "24px 28px",
+      color: "inherit",
+      textDecoration: "none",
+      transition: "all 0.2s",
+    }}
+    onMouseEnter={e => {
+      e.currentTarget.style.borderColor = "#22c55e";
+      e.currentTarget.style.transform = "translateY(-4px)";
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.borderColor = highlighted ? "#22c55e" : "#1e3a5f";
+      e.currentTarget.style.transform = "translateY(0)";
+    }}
+  >
+    <div style={{ fontSize: 28, marginBottom: 8 }}>{item.icon}</div>
+    <div style={{ fontWeight: 700, fontSize: 16, color: "#e2e8f0", marginBottom: 4 }}>
+      {item.title}
+    </div>
+    <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>{item.subtitle}</div>
+    <div style={{
+      fontSize: 10, color: "#22c55e", fontFamily: "monospace",
+      textTransform: "uppercase", letterSpacing: "0.1em",
+    }}>
+      {item.cta}
+    </div>
+  </a>
+);
+
 const useInView = (threshold = 0.15) => {
   const ref = useRef(null);
   const [inView, setInView] = useState(false);
@@ -143,6 +246,9 @@ const TerminalBlock = ({ lines }) => {
 export default function App() {
   const [scrollY, setScrollY] = useState(0);
   useEffect(() => { const h = () => setScrollY(window.scrollY); window.addEventListener("scroll", h); return () => window.removeEventListener("scroll", h); }, []);
+  const platform = detectPlatform();
+  const primary = DOWNLOADS.filter(d => d.platforms.includes(platform));
+  const others = DOWNLOADS.filter(d => !d.platforms.includes(platform));
 
   return (
     <div style={{ background: "#030b18", color: "#e2e8f0", fontFamily: "'Segoe UI', system-ui, sans-serif", overflowX: "hidden" }}>
@@ -368,46 +474,96 @@ export default function App() {
 
       {/* DOWNLOAD */}
       <section id="telecharger" style={{ padding: "140px 48px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, #16653414 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center", position: "relative" }}>
+        <div style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)", width: 600, height: 600,
+          borderRadius: "50%", background: "radial-gradient(circle, #16653414 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center", position: "relative" }}>
           <FadeIn>
-            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 24, textTransform: "uppercase" }}>05 — Installation</div>
+            <div style={{
+              fontFamily: "monospace", fontSize: 12, color: "#22c55e",
+              letterSpacing: "0.2em", marginBottom: 24, textTransform: "uppercase",
+            }}>
+              05 — Installation
+            </div>
             <h2 style={{ fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 20 }}>
               Prêt à chiffrer<br /><span style={{ color: "#22c55e" }}>vos données</span> ?
             </h2>
-            <p style={{ color: "#64748b", fontSize: 16, lineHeight: 1.7, marginBottom: 56, maxWidth: 520, margin: "0 auto 56px" }}>
-              Téléchargez l'installeur Windows : un double-clic installe l'application de bureau, rien d'autre à configurer. Importez vos données, suivez la progression du transfert, et visualisez les clusters sur une carte — le tout en local. La clé secrète est générée localement, jamais transmise.
+            <p style={{
+              color: "#64748b", fontSize: 16, lineHeight: 1.7, marginBottom: 48,
+              maxWidth: 560, margin: "0 auto 48px",
+            }}>
+              Téléchargez l'application de bureau pour votre système. Chiffrement et clé secrète
+              restent <b>locaux</b> ; seules les signatures chiffrées sont envoyées au serveur.
             </p>
 
-            <div style={{ marginBottom: 40 }}>
-              <FadeIn delay={0.1}>
-                <a href="https://github.com/tVelard/Crypttraject-Software/releases/latest/download/CryptTraject-Setup.exe"
-                  style={{ display: "inline-block", minWidth: 300, background: "#0a1628", border: "1px solid #1e3a5f", borderRadius: 12, padding: "28px 40px", color: "inherit", textDecoration: "none", transition: "all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#22c55e"; e.currentTarget.style.transform = "translateY(-4px)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#1e3a5f"; e.currentTarget.style.transform = "translateY(0)"; }}>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>⊞</div>
-                  <div style={{ fontWeight: 700, fontSize: 18, color: "#e2e8f0", marginBottom: 4 }}>Windows</div>
-                  <div style={{ fontSize: 12, color: "#475569" }}>x64 · application de bureau · ~180 MB</div>
-                  <div style={{ fontSize: 10, color: "#22c55e", marginTop: 8, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.1em" }}>Télécharger l'installeur ↓</div>
-                </a>
-              </FadeIn>
-            </div>
+            {primary.length > 0 && (
+              <>
+                <div style={{ fontFamily: "monospace", fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>
+                  Recommandé pour votre système
+                </div>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  gap: 16, marginBottom: 12, textAlign: "left",
+                }}>
+                  {primary.map((item, i) => (
+                    <FadeIn key={item.id} delay={i * 0.08}>
+                      <DownloadCard item={item} highlighted />
+                    </FadeIn>
+                  ))}
+                </div>
+                {primary[0]?.hint && (
+                  <div style={{ fontFamily: "monospace", fontSize: 12, color: "#475569", marginBottom: 40 }}>
+                    {primary.map(p => p.hint).join(" · ")}
+                  </div>
+                )}
+              </>
+            )}
+
+            {others.length > 0 && (
+              <>
+                <div style={{ fontFamily: "monospace", fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>
+                  Autres plateformes
+                </div>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  gap: 16, marginBottom: 32, textAlign: "left",
+                }}>
+                  {others.map((item, i) => (
+                    <FadeIn key={item.id} delay={0.1 + i * 0.08}>
+                      <DownloadCard item={item} />
+                    </FadeIn>
+                  ))}
+                </div>
+              </>
+            )}
 
             <FadeIn delay={0.2}>
-              <div style={{ fontFamily: "monospace", fontSize: 12, color: "#475569", marginBottom: 32 }}>
-                Lancez <code style={{ color: "#22c55e" }}>CryptTraject-Setup.exe</code>, puis ouvrez <code style={{ color: "#22c55e" }}>CryptTraject</code> depuis le menu Démarrer.
-              </div>
+              <a
+                href="https://github.com/tVelard/Crypttraject-Software/releases/latest"
+                style={{ color: "#64748b", fontSize: 13, fontFamily: "monospace" }}
+              >
+                Voir toutes les releases sur GitHub →
+              </a>
             </FadeIn>
 
+            {/* bloc "depuis les sources" inchangé */}
             <FadeIn delay={0.25}>
-              <details style={{ background: "#020810", border: "1px solid #1e3a5f", borderRadius: 10, padding: "16px 22px", textAlign: "left", marginBottom: 40 }}>
+              <details style={{
+                background: "#020810", border: "1px solid #1e3a5f", borderRadius: 10,
+                padding: "16px 22px", textAlign: "left", marginBottom: 40, marginTop: 32,
+              }}>
                 <summary style={{ cursor: "pointer", fontFamily: "monospace", fontSize: 13, color: "#94a3b8" }}>
                   Ou depuis les sources (dev)
                 </summary>
                 <div style={{ fontFamily: "monospace", fontSize: 13, lineHeight: 1.9, marginTop: 14 }}>
                   <div style={{ color: "#64748b" }}># cloner</div>
                   <div><span style={{ color: "#22c55e" }}>$</span> git clone https://github.com/tVelard/Crypttraject-Software</div>
-                  <div><span style={{ color: "#22c55e" }}>$</span> cd CryptTraject-Software</div>
+                  <div><span style={{ color: "#22c55e" }}>$</span> cd Crypttraject-Software</div>
                   <div style={{ color: "#64748b", marginTop: 12 }}># installer Python deps + dev install</div>
                   <div><span style={{ color: "#22c55e" }}>$</span> pip install -r requirements.txt && pip install -e .</div>
                   <div style={{ color: "#64748b", marginTop: 12 }}># lancer l'application de bureau</div>
@@ -419,8 +575,12 @@ export default function App() {
             </FadeIn>
 
             <FadeIn delay={0.3}>
-              <div style={{ fontFamily: "monospace", fontSize: 13, color: "#64748b", background: "#050d1a", border: "1px solid #1e3a5f", borderRadius: 8, padding: "12px 20px", display: "inline-block" }}>
-                crypttraject v0.4.0 &nbsp;·&nbsp; Python 3.10+ &nbsp;·&nbsp; BFV via Pyfhel
+              <div style={{
+                fontFamily: "monospace", fontSize: 13, color: "#64748b",
+                background: "#050d1a", border: "1px solid #1e3a5f",
+                borderRadius: 8, padding: "12px 20px", display: "inline-block", marginTop: 24,
+              }}>
+                crypttraject v{APP_VERSION} &nbsp;·&nbsp; Python 3.10+ &nbsp;·&nbsp; BFV via Pyfhel
               </div>
             </FadeIn>
           </FadeIn>
@@ -434,7 +594,7 @@ export default function App() {
           <span style={{ fontFamily: "monospace", fontSize: 14, color: "#334155" }}>CryptTraject — projet intégrateur Télécom Paris 2A</span>
         </div>
         <div style={{ display: "flex", gap: 24, fontSize: 13, color: "#334155" }}>
-          <a href="https://github.com" style={{ color: "#334155", textDecoration: "none" }}>GitHub</a>
+          <a href="https://github.com/tVelard/Crypttraject-Software" style={{ color: "#334155", textDecoration: "none" }}>GitHub</a>
           <a href="#concept" style={{ color: "#334155", textDecoration: "none" }}>Documentation</a>
           <a href="#telecharger" style={{ color: "#334155", textDecoration: "none" }}>Installation</a>
         </div>
