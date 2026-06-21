@@ -17,8 +17,10 @@ from ..keys import ClientSession
 
 @dataclass
 class AppState:
-    # ---- source: a Geolife .plt trajectory directory ----
+    # ---- source: trajectory file(s) or directory ----
     source_path: Optional[Path] = None
+    source_adapter_id: str = "geolife-plt"
+    extractor_id: str = "geohash"
     geohash_precision: int = 6
     limit: Optional[int] = 50
 

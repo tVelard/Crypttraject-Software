@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 const RELEASE_BASE =
   "https://github.com/tVelard/Crypttraject-Software/releases/latest/download";
 
-const APP_VERSION = "0.4.0";
+const APP_VERSION = "0.5.0";
 
 const DOWNLOADS = [
   {

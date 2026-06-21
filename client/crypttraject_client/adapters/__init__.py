@@ -1,22 +1,44 @@
-"""Data-source adapters.
+"""Data-source adapters and feature extractors.
 
-The client ingests Geolife `.plt` trajectory directories and turns each
-trajectory into a set of geohash feature tokens (bytes) ready to feed
-MinHash.
-
-Adding a new source = subclassing `DataSourceAdapter` and implementing
-`iter_records()`. The encryption pipeline never has to know what kind of
-source it came from.
+Ingest GPS trajectories from several file formats, turn each trajectory
+into geohash feature tokens, then feed MinHash.  See ``registry.py`` for
+auto-detection and factory helpers.
 """
 
-from .base import DataSourceAdapter, Record, FeatureExtractor
-from .plt_adapter import PLTGeolifeAdapter
+from .base import DataSourceAdapter, FeatureExtractor, Record
+from .csv_adapter import CsvAdapter
 from .features import GeoHashExtractor
+from .geojson_adapter import GeoJsonAdapter
+from .gpx_adapter import GpxAdapter
+from .plt_adapter import PLTGeolifeAdapter
+from .registry import (
+    EXTRACTOR_IDS,
+    EXTRACTOR_SPECS,
+    SOURCE_IDS,
+    SOURCE_SPECS,
+    create_adapter,
+    create_extractor,
+    default_extractor_for,
+    detect_source,
+    validate_source_path,
+)
 
 __all__ = [
+    "CsvAdapter",
     "DataSourceAdapter",
-    "Record",
+    "EXTRACTOR_IDS",
+    "EXTRACTOR_SPECS",
     "FeatureExtractor",
-    "PLTGeolifeAdapter",
     "GeoHashExtractor",
+    "GeoJsonAdapter",
+    "GpxAdapter",
+    "PLTGeolifeAdapter",
+    "Record",
+    "SOURCE_IDS",
+    "SOURCE_SPECS",
+    "create_adapter",
+    "create_extractor",
+    "default_extractor_for",
+    "detect_source",
+    "validate_source_path",
 ]

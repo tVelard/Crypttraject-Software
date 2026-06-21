@@ -4,7 +4,6 @@ Wires together: adapter -> feature extractor -> MinHash -> BFV encrypt
 -> HTTP upload -> server cluster -> decrypt -> Union-Find clusters.
 
 Example:
-    # Geolife .plt directory
     python -m crypttraject_client.cli \\
         --path "dataset/Geolife Trajectories 1.3/Data" \\
         --limit 50 \\
@@ -22,7 +21,14 @@ from typing import Dict
 
 import numpy as np
 
-from .adapters import GeoHashExtractor, PLTGeolifeAdapter
+from .adapters import (
+    EXTRACTOR_IDS,
+    SOURCE_IDS,
+    create_adapter,
+    create_extractor,
+    detect_source,
+    validate_source_path,
+)
 from .decrypt import build_clusters
 from .keys import ClientSession
 from .minhash import compute_minhash
@@ -31,17 +37,25 @@ from .minhash import compute_minhash
 log = logging.getLogger("crypttraject.cli")
 
 
-def _build_adapter(args):
-    return PLTGeolifeAdapter(dataset_dir=Path(args.path), limit=args.limit)
-
-
-def _build_extractor(args):
-    return GeoHashExtractor(points_field="points", precision=args.geohash_precision)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="CryptTraject end-to-end client.")
-    parser.add_argument("--path", required=True, help="Geolife .plt directory")
+    parser.add_argument(
+        "--path",
+        required=True,
+        help="Trajectory file or directory (Geolife .plt, GPX, CSV, GeoJSON)",
+    )
+    parser.add_argument(
+        "--format",
+        choices=SOURCE_IDS,
+        default=None,
+        help="Source format (auto-detected from --path when omitted)",
+    )
+    parser.add_argument(
+        "--extractor",
+        choices=EXTRACTOR_IDS,
+        default="geohash",
+        help="Feature extractor (default: geohash)",
+    )
     parser.add_argument("--geohash-precision", type=int, default=6)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--num-perm", type=int, default=128)
@@ -56,14 +70,22 @@ def main() -> int:
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
 
-    # 1. Parse + features
-    adapter = _build_adapter(args)
-    extractor = _build_extractor(args)
+    path = Path(args.path)
+    source_id = args.format or detect_source(path)
+    validate_source_path(source_id, path)
+
+    adapter = create_adapter(source_id, path, limit=args.limit)
+    extractor = create_extractor(args.extractor, geohash_precision=args.geohash_precision)
 
     signatures: Dict[str, np.ndarray] = {}
     for rid, tokens in adapter.iter_features(extractor):
         signatures[rid] = compute_minhash(tokens, num_perm=args.num_perm)
-    log.info("Computed %d MinHash signatures locally.", len(signatures))
+    log.info(
+        "Computed %d MinHash signatures locally (source=%s, extractor=%s).",
+        len(signatures),
+        source_id,
+        args.extractor,
+    )
     if len(signatures) < 2:
         log.error("Need at least 2 records to cluster.")
         return 1

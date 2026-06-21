@@ -34,7 +34,7 @@ SPEC = ROOT / "packaging" / "crypttraject.spec"
 ISS = ROOT / "packaging" / "installer.iss"
 
 # Keep in sync with pyproject.toml [project].version.
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.5.0"
 
 
 def fail(msg: str) -> "NoReturn":

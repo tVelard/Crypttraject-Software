@@ -44,7 +44,7 @@ from .session import SessionStore
 
 app = FastAPI(
     title="CryptTraject server",
-    version="0.4.0",
+    version="0.5.0",
     description="Homomorphic clustering server. Never receives secret keys.",
 )
 

@@ -14,7 +14,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal
 
-from ..adapters import GeoHashExtractor, PLTGeolifeAdapter
+from ..adapters import create_adapter, create_extractor
 from ..decrypt import build_clusters
 from ..keys import ClientSession
 from ..minhash import compute_minhash
@@ -26,11 +26,18 @@ from .state import AppState
 # ---------------------------------------------------------------------------
 
 def _make_adapter(state: AppState):
-    return PLTGeolifeAdapter(dataset_dir=state.source_path, limit=state.limit)
+    return create_adapter(
+        state.source_adapter_id,
+        state.source_path,
+        limit=state.limit,
+    )
 
 
 def _make_extractor(state: AppState):
-    return GeoHashExtractor(points_field="points", precision=state.geohash_precision)
+    return create_extractor(
+        state.extractor_id,
+        geohash_precision=state.geohash_precision,
+    )
 
 
 def _extract_points(record) -> List[Tuple[float, float]]:

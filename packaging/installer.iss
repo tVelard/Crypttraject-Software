@@ -8,10 +8,10 @@
 ;
 ; Built by packaging/build_binaries.py via the Inno Setup compiler (ISCC).
 ; AppVersion can be overridden on the command line:
-;     ISCC /DAppVersion=0.4.0 packaging\installer.iss
+;     ISCC /DAppVersion=0.5.0 packaging\installer.iss
 
 #ifndef AppVersion
-  #define AppVersion "0.4.0"
+  #define AppVersion "0.5.0"
 #endif
 
 #define AppName "CryptTraject"
