@@ -10,7 +10,7 @@ const DOWNLOADS = [
     id: "windows-installer",
     platforms: ["win32"],
     icon: "⊞",
-    title: "Windows — Installeur",
+    title: "Windows : Installeur",
     subtitle: "x64 · ~180 MB · recommandé",
     file: "CryptTraject-Setup-x64.exe",
     cta: "Télécharger l'installeur ↓",
@@ -20,7 +20,7 @@ const DOWNLOADS = [
     id: "windows-portable",
     platforms: ["win32"],
     icon: "⊞",
-    title: "Windows — Portable",
+    title: "Windows : Portable",
     subtitle: "x64 · zip · sans installation",
     file: "CryptTraject-Windows-x64-portable.zip",
     cta: "Télécharger le zip ↓",
@@ -332,18 +332,17 @@ export default function App() {
 
       {/* STATS */}
       <section style={{ padding: "80px 48px", borderTop: "1px solid #0f2337", borderBottom: "1px solid #0f2337", background: "#050d1a" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 40 }}>
-          <StatPill value="0" label="Clé secrète sur le serveur" delay={0} />
-          <StatPill value="BFV" label="Schéma homomorphe utilisé" delay={0.1} />
-          <StatPill value="n=4096" label="Degré du polynôme (sec=128)" delay={0.2} />
-          <StatPill value="128" label="Permutations MinHash" delay={0.3} />
+        <div style={{ maxWidth: 720, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
+          <StatPill value="BFV" label="Schéma homomorphe utilisé" delay={0} />
+          <StatPill value="n=4096" label="Degré du polynôme (sec=128)" delay={0.1} />
+          <StatPill value="128" label="Permutations MinHash" delay={0.2} />
         </div>
       </section>
 
       {/* CONCEPT */}
       <section id="concept" style={{ padding: "120px 48px", maxWidth: 1100, margin: "0 auto" }}>
         <FadeIn>
-          <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase" }}>01 — Principe</div>
+          <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase" }}>01 · Principe</div>
           <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 800, marginBottom: 24, lineHeight: 1.15 }}>
             Vos données restent <span style={{ color: "#22c55e" }}>les vôtres.</span><br />Même pendant le calcul.
           </h2>
@@ -355,7 +354,7 @@ export default function App() {
               Le chiffrement complètement homomorphe (FHE) permet d'opérer sur des ciphertexts comme s'ils étaient en clair. Avec le schéma <b>BFV</b>, additions et multiplications sont conservées modulo un entier.
             </p>
             <p style={{ color: "#94a3b8", fontSize: 16, lineHeight: 1.8 }}>
-              L'application de bureau fait tout le travail sensible : parsing, MinHash, génération de clé, chiffrement, <b>déchiffrement et visualisation</b>. Le serveur reçoit uniquement le contexte BFV, la clé <b>publique</b>, et les signatures chiffrées. Il calcule des clusters sur les ciphertexts et vous renvoie le résultat, que vous seuls pouvez déchiffrer — et afficher sur une carte.
+              L'application de bureau fait tout le travail sensible : parsing, MinHash, génération de clé, chiffrement, <b>déchiffrement et visualisation</b>. Le serveur reçoit uniquement le contexte BFV, la clé <b>publique</b>, et les signatures chiffrées. Il calcule des clusters sur les ciphertexts et vous renvoie le résultat, que vous seuls pouvez déchiffrer puis afficher sur une carte.
             </p>
           </FadeIn>
           <FadeIn delay={0.25}>
@@ -376,22 +375,22 @@ export default function App() {
       <section id="pipeline" style={{ padding: "120px 48px", background: "#050d1a", borderTop: "1px solid #0f2337" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <FadeIn>
-            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase" }}>02 — Le pipeline en trois briques</div>
+            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase" }}>02 · Le pipeline</div>
             <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, marginBottom: 16 }}>Trois briques cryptographiques<br />pour un seul objectif</h2>
             <p style={{ color: "#64748b", fontSize: 16, marginBottom: 60, maxWidth: 600 }}>
-              CryptTraject combine MinHash pour résumer les enregistrements, LSH pour identifier les paires proches, et BFV pour faire tout ça sur des données chiffrées. Chaque brique a un rôle précis.
+              MinHash résume chaque trajectoire, BFV calcule la similarité sur les données chiffrées, et l'indice de Jaccard assemble les clusters côté client.
             </p>
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
             <SchemaCard title="MinHash" tag="Côté client" accent="#22c55e"
               desc="Résume chaque trajectoire en une signature de taille fixe à partir de ses cellules geohash."
-              features={["128 permutations par défaut", "Estimation Jaccard en O(1)", "Geohash pour trajectoires GPS", "Jeu de données Geolife (.plt)"]} />
+              features={["128 permutations par défaut", "Estimation rapide du Jaccard", "Geohash pour trajectoires GPS"]} />
             <SchemaCard title="BFV" tag="Sur le serveur" accent="#3b82f6"
-              desc="Schéma Brakerski-Fan-Vercauteren via Pyfhel. Permet additions et multiplications sur ciphertexts entiers."
-              features={["n = 4096, t = 65537, sec = 128", "Batching SIMD (2048 slots)", "Test d'égalité via (x−y)²", "Clé secrète exclusivement locale"]} />
-            <SchemaCard title="LSH + Jaccard" tag="Bout en bout" accent="#8b5cf6"
-              desc="Locality-Sensitive Hashing identifie les paires candidates, Union-Find assemble les clusters côté client après déchiffrement."
-              features={["Bandes paramétrables (b × r)", "Seuil Jaccard configurable", "Union-Find avec compression", "Comparé à un baseline en clair"]} />
+              desc="Chiffrement homomorphe qui calcule la similarité directement sur les données chiffrées."
+              features={["Additions et multiplications chiffrées", "Test d'égalité sur entiers", "Clé secrète exclusivement locale"]} />
+            <SchemaCard title="Jaccard" tag="Bout en bout" accent="#8b5cf6"
+              desc="L'indice de Jaccard mesure la similarité, puis Union-Find assemble les clusters côté client après déchiffrement."
+              features={["Seuil de similarité configurable", "Clustering par Union-Find", "Déchiffrement 100% local"]} />
           </div>
         </div>
       </section>
@@ -400,17 +399,17 @@ export default function App() {
       <section id="workflow" style={{ padding: "120px 48px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <FadeIn>
-            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase" }}>03 — Workflow</div>
+            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase" }}>03 · Workflow</div>
             <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, marginBottom: 60 }}>De vos fichiers aux clusters,<br />sans rien révéler</h2>
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               {[
-                { n: "01", t: "Choix de la source", d: "Un répertoire de trajectoires .plt Geolife. Vous choisissez le dossier et la précision geohash des points GPS, directement dans l'application." },
-                { n: "02", t: "MinHash + chiffrement BFV", d: "L'application calcule la signature MinHash de chaque enregistrement, génère une paire de clés BFV (n=4096, sec=128), et chiffre. La clé secrète est sauvegardée localement, jamais transmise." },
-                { n: "03", t: "Upload + suivi de progression", d: "Les ciphertexts sont envoyés au serveur. L'interface affiche la progression étape par étape — chiffrement, transfert, temps de calcul serveur — avec un chrono en direct." },
+                { n: "01", t: "Choix de la source", d: "Un fichier ou un dossier de trajectoires GPS (Geolife, GPX, CSV, GeoJSON). Le format est détecté automatiquement ; vous réglez la précision geohash directement dans l'application." },
+                { n: "02", t: "MinHash + chiffrement BFV", d: "L'application calcule la signature MinHash de chaque trajectoire, génère une paire de clés BFV (n=4096, sec=128), et chiffre. La clé secrète est sauvegardée localement, jamais transmise." },
+                { n: "03", t: "Upload + suivi de progression", d: "Les ciphertexts sont envoyés au serveur. L'interface affiche la progression étape par étape (chiffrement, transfert, temps de calcul serveur) avec un chrono en direct." },
                 { n: "04", t: "Calcul homomorphe + Union-Find", d: "Le serveur calcule (sig_A − sig_B)² pour chaque paire et renvoie les ciphertexts. L'application déchiffre, applique le seuil de Jaccard et assemble les clusters via Union-Find." },
-                { n: "05", t: "Visualisation sur carte", d: "Les clusters s'affichent dans une carte interactive : chaque trajectoire est colorée selon son cluster. Tout est déchiffré et tracé localement — le serveur n'a jamais vu vos données en clair. Export JSON disponible." },
+                { n: "05", t: "Visualisation sur carte", d: "Les clusters s'affichent dans une carte interactive : chaque trajectoire est colorée selon son cluster. Tout est déchiffré et tracé localement ; le serveur n'a jamais vu vos données en clair. Export JSON disponible." },
               ].map(({ n, t, d }, i) => (
                 <FadeIn key={n} delay={i * 0.1}>
                   <div style={{ display: "flex", gap: 20 }}>
@@ -425,7 +424,7 @@ export default function App() {
             </div>
             <FadeIn delay={0.2}>
               <TerminalBlock lines={[
-                "# CryptTraject — déroulé d'une analyse",
+                "# CryptTraject : déroulé d'une analyse",
                 "  Source : Geolife/Data  ·  50 trajets",
                 "  Serveur : crypttraject.rezel.net/api",
                 "",
@@ -448,16 +447,17 @@ export default function App() {
       <section style={{ padding: "80px 48px", background: "#050d1a", borderTop: "1px solid #0f2337" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <FadeIn>
-            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase", textAlign: "center" }}>04 — Données prises en charge</div>
+            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 16, textTransform: "uppercase", textAlign: "center" }}>04 · Données prises en charge</div>
             <p style={{ color: "#64748b", fontSize: 14, marginBottom: 48, maxWidth: 540, margin: "0 auto 48px", textAlign: "center" }}>
-              CryptTraject ingère les trajectoires GPS du jeu de données <b>Geolife</b> (Microsoft Research), au format <code style={{ color: "#22c55e" }}>.plt</code>. L'architecture par adaptateurs reste extensible : ajouter une source = écrire une sous-classe de <code style={{ color: "#22c55e" }}>DataSourceAdapter</code>.
+              CryptTraject ingère des trajectoires GPS depuis plusieurs formats courants. Le format est détecté automatiquement à l'ouverture du fichier ou du dossier, et chaque point devient une cellule geohash.
             </p>
           </FadeIn>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, maxWidth: 720, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, maxWidth: 880, margin: "0 auto" }}>
             {[
-              { fmt: ".plt", detail: "Trajectoires Geolife (Microsoft Research)" },
-              { fmt: "lat / lon", detail: "Points GPS → cellules geohash" },
-              { fmt: "extensible", detail: "Sous-classe DataSourceAdapter" },
+              { fmt: "Geolife .plt", detail: "Trajectoires GPS (Microsoft Research)" },
+              { fmt: "GPX", detail: "GPS Exchange Format" },
+              { fmt: "CSV", detail: "Points avec colonnes lat / lon" },
+              { fmt: "GeoJSON", detail: "LineString et MultiPoint" },
             ].map(({ fmt, detail }, i) => (
               <FadeIn key={fmt} delay={i * 0.07}>
                 <div style={{ background: "#0a1628", border: "1px solid #1e3a5f", borderRadius: 10, padding: "20px 12px", textAlign: "center", transition: "border-color 0.2s" }}
@@ -486,7 +486,7 @@ export default function App() {
               fontFamily: "monospace", fontSize: 12, color: "#22c55e",
               letterSpacing: "0.2em", marginBottom: 24, textTransform: "uppercase",
             }}>
-              05 — Installation
+              05 · Installation
             </div>
             <h2 style={{ fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 20 }}>
               Prêt à chiffrer<br /><span style={{ color: "#22c55e" }}>vos données</span> ?
@@ -591,7 +591,7 @@ export default function App() {
       <footer style={{ borderTop: "1px solid #0f2337", padding: "40px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#030b18" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <LockIcon size={22} />
-          <span style={{ fontFamily: "monospace", fontSize: 14, color: "#334155" }}>CryptTraject — projet intégrateur Télécom Paris 2A</span>
+          <span style={{ fontFamily: "monospace", fontSize: 14, color: "#334155" }}>CryptTraject · projet intégrateur Télécom Paris 2A</span>
         </div>
         <div style={{ display: "flex", gap: 24, fontSize: 13, color: "#334155" }}>
           <a href="https://github.com/tVelard/Crypttraject-Software" style={{ color: "#334155", textDecoration: "none" }}>GitHub</a>
