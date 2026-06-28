@@ -212,20 +212,6 @@ const SchemaCard = ({ title, tag, desc, features, accent }) => {
   );
 };
 
-const StatPill = ({ value, label, delay }) => {
-  const [ref, inView] = useInView();
-  return (
-    <div ref={ref} style={{
-      textAlign: "center", opacity: inView ? 1 : 0,
-      transform: inView ? "scale(1)" : "scale(0.85)",
-      transition: `all 0.6s ease ${delay}s`
-    }}>
-      <div style={{ fontSize: 42, fontWeight: 800, color: "#22c55e", fontFamily: "monospace", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 13, color: "#64748b", marginTop: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
-    </div>
-  );
-};
-
 const TerminalBlock = ({ lines }) => {
   const [shown, setShown] = useState(0);
   const [ref, inView] = useInView();
@@ -299,7 +285,7 @@ export default function App() {
           </div>
 
           <div style={{ fontFamily: "monospace", fontSize: 12, color: "#22c55e", letterSpacing: "0.2em", marginBottom: 20, textTransform: "uppercase" }}>
-            BFV · MinHash · LSH
+            BFV · MinHash
           </div>
 
           <h1 style={{ fontSize: "clamp(36px, 6vw, 72px)", fontWeight: 900, lineHeight: 1.05, marginBottom: 24, background: "linear-gradient(135deg, #f0fdf4 0%, #86efac 40%, #22c55e 70%, #15803d 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -327,15 +313,6 @@ export default function App() {
         <div style={{ position: "absolute", bottom: 32, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "#334155", fontSize: 12 }}>
           <span>Défiler</span>
           <div style={{ width: 1, height: 40, background: "linear-gradient(#22c55e, transparent)", animation: "float 2s ease-in-out infinite" }} />
-        </div>
-      </section>
-
-      {/* STATS */}
-      <section style={{ padding: "80px 48px", borderTop: "1px solid #0f2337", borderBottom: "1px solid #0f2337", background: "#050d1a" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
-          <StatPill value="BFV" label="Schéma homomorphe utilisé" delay={0} />
-          <StatPill value="n=4096" label="Degré du polynôme (sec=128)" delay={0.1} />
-          <StatPill value="128" label="Permutations MinHash" delay={0.2} />
         </div>
       </section>
 
